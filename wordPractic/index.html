@@ -11,20 +11,14 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%231a1a2e' width='192' height='192'/><circle cx='96' cy='96' r='80' fill='%23e2b96f'/><text x='96' y='120' font-size='80' font-weight='bold' fill='%231a1a2e' text-anchor='middle' dominant-baseline='middle'>Λ</text></svg>">
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%231a1a2e' width='192' height='192' rx='45'/><circle cx='96' cy='96' r='80' fill='%23e2b96f'/><text x='96' y='120' font-size='80' font-weight='bold' fill='%231a1a2e' text-anchor='middle' dominant-baseline='middle'>Λ</text></svg>">
+ 
+ 
+ 
   <title>Польська → Українська</title>
 </head>
 <body>
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
-  <script>
-    // Register service worker for PWA/offline support
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-          .then(() => console.log('Service Worker registered'))
-          .catch((err) => console.warn('SW registration failed:', err));
-      });
-    }
-  </script>
+
 </body>
 </html>

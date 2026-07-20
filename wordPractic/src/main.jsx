@@ -11,3 +11,20 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </HashRouter>
   </React.StrictMode>
 )
+
+
+console.log("URL:", window.location.href);
+console.log("origin:", window.location.origin);
+console.log("navigator:", navigator);
+console.log("SW:", 'serviceWorker' in navigator);
+console.log("secure:", window.isSecureContext);
+
+  // Register service worker for PWA/offline support
+    if ('serviceWorker' in navigator) {
+      alert('test')
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(() => console.log('Service Worker registered'))
+          .catch((err) => console.warn('SW registration failed:', err));
+      });
+    }
