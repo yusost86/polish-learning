@@ -21,9 +21,9 @@ console.log("secure:", window.isSecureContext);
 
   // Register service worker for PWA/offline support
     if ('serviceWorker' in navigator) {
-      alert('test')
+
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js')
+        navigator.serviceWorker.register(` ${import.meta.env.BASE_URL}/service-worker.js`)
           .then(() => console.log('Service Worker registered'))
           .catch((err) => console.warn('SW registration failed:', err));
       });
