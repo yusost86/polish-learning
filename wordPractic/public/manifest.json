@@ -1,0 +1,9 @@
+{
+  "name": "Польська → Українська",
+  "short_name": "Пол↔Укр",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f3460",
+  "theme_color": "#e2b96f",
+  "description": "Гра для вивчення польських слів з завантаженням власних наборів."
+}

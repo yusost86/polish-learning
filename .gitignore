@@ -1,0 +1,15 @@
+# Node modules
+wordPractic/node_modules/
+
+# Vite build output
+wordPractic/dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor temporary files
+.vscode/
+*.swp
+*.swo
