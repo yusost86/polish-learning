@@ -23,7 +23,7 @@ console.log("secure:", window.isSecureContext);
     if ('serviceWorker' in navigator) {
       alert('test')
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
+        navigator.serviceWorker.register('./service-worker.js')
           .then(() => console.log('Service Worker registered'))
           .catch((err) => console.warn('SW registration failed:', err));
       });
