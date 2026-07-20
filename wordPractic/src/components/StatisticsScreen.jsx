@@ -1,6 +1,6 @@
 import { formatDate, DEFAULT_SET_ID } from '../utils'
 
-export default function StatisticsScreen({ progressData, onBack, onRepeatNow }) {
+export default function StatisticsScreen({ progressData, onBack, onRepeatNow, onShowWords }) {
   const totalWords = progressData.length
   const learnedWords = progressData.filter((item) => item.status === 'learned').length
 
@@ -58,23 +58,23 @@ export default function StatisticsScreen({ progressData, onBack, onRepeatNow }) 
   })
 
   const styles = {
-    app: { minHeight: '100vh', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' },
-    card: { background: 'rgba(255,255,255,0.05)', borderRadius: '24px', padding: '24px', maxWidth: '980px', width: '100%' },
-    header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' },
-    title: { fontSize: '22px', fontWeight: 900, color: '#e2b96f' },
-    dashboard: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '18px' },
-    leftCol: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' },
-    statBox: { background: 'rgba(255,255,255,0.04)', padding: '14px', borderRadius: '12px' },
-    statRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' },
-    statLabel: { color: 'rgba(255,255,255,0.75)' },
-    statValue: { color: '#fff', fontWeight: 800 },
-    progressBarBg: { background: 'rgba(255,255,255,0.08)', height: '16px', borderRadius: '12px', overflow: 'hidden' },
+    app: { minHeight: '100vh', fontSize: '14px', overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '12px', paddingTop: 'max(12px, env(safe-area-inset-top))', paddingBottom: 'max(12px, env(safe-area-inset-bottom))' },
+    card: { background: 'rgba(255,255,255,0.05)', borderRadius: '18px', padding: '14px', maxWidth: '980px', width: '100%', margin: '0 auto' },
+    header: { display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' },
+    title: { fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 900, color: '#e2b96f' },
+    dashboard: { display: 'grid', gridTemplateColumns: '1fr', gap: '10px', marginBottom: '10px' },
+    leftCol: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px' },
+    statBox: { background: 'rgba(255,255,255,0.04)', padding: '10px', borderRadius: '8px' },
+    statRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px', fontSize: 'clamp(11px, 3vw, 13px)' },
+    statLabel: { color: 'rgba(255,255,255,0.75)', flex: 1 },
+    statValue: { color: '#fff', fontWeight: 800, marginLeft: '6px' },
+    progressBarBg: { background: 'rgba(255,255,255,0.08)', height: '12px', borderRadius: '8px', overflow: 'hidden' },
     progressFill: { height: '100%', background: 'linear-gradient(90deg,#48c78e,#e2b96f)', width: `${progressPercent}%` },
-    rightCol: { display: 'flex', flexDirection: 'column', gap: '12px' },
-    activityCard: { background: 'rgba(255,255,255,0.04)', padding: '14px', borderRadius: '12px' },
-    repeatBtn: { marginTop: '12px', padding: '12px 18px', background: 'linear-gradient(135deg, #48c78e, #2fa36f)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 800 },
-    levelsGrid: { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', marginTop: '8px' },
-    levelItem: { background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '8px', textAlign: 'center' },
+    rightCol: { display: 'grid', gridTemplateColumns: '1fr', gap: '8px' },
+    activityCard: { background: 'rgba(255,255,255,0.04)', padding: '10px', borderRadius: '8px' },
+    repeatBtn: { marginTop: '8px', padding: '9px 12px', background: 'linear-gradient(135deg, #48c78e, #2fa36f)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 800, fontSize: 'clamp(12px, 3vw, 14px)' },
+    levelsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(55px, 1fr))', gap: '5px', marginTop: '6px' },
+    levelItem: { background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '6px', textAlign: 'center', fontSize: '11px' },
   }
 
   return (
@@ -83,10 +83,11 @@ export default function StatisticsScreen({ progressData, onBack, onRepeatNow }) 
         <div style={styles.header}>
           <div>
             <div style={styles.title}>Статистика прогресу</div>
-            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>Огляд твоєї активності та повторень</div>
+            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 'clamp(12px, 3vw, 13px)' }}>Огляд твоєї активності та повторень</div>
           </div>
-          <div>
-            <button style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', color: '#fff', border: 'none' }} onClick={onBack}>← Назад</button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', color: '#fff', border: 'none', fontSize: 'clamp(12px, 3vw, 14px)', cursor: 'pointer' }} onClick={onShowWords}>📖 Слова</button>
+            <button style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', color: '#fff', border: 'none', fontSize: 'clamp(12px, 3vw, 14px)', cursor: 'pointer' }} onClick={onBack}>← Назад</button>
           </div>
         </div>
 
@@ -136,36 +137,34 @@ export default function StatisticsScreen({ progressData, onBack, onRepeatNow }) 
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginTop: 12 }}>
-          <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 12 }}>
-            <div style={{ fontWeight: 800, color: '#e2b96f', marginBottom: 8 }}>⏰ Повторення</div>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ color: 'rgba(255,255,255,0.8)' }}>Повторити сьогодні</div>
-                <div style={{ fontWeight: 800 }}>{reviewToday.length}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%', marginTop: 6 }}>
+          <div style={{ background: 'rgba(255,255,255,0.03)', padding: 10, borderRadius: 8 }}>
+            <div style={{ fontWeight: 800, color: '#e2b96f', marginBottom: 6, fontSize: 'clamp(13px, 4vw, 15px)' }}>⏰ Повторення</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(70px, 1fr))', gap: 6 }}>
+              <div>
+                <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 'clamp(11px, 3vw, 12px)' }}>Повторити</div>
+                <div style={{ fontWeight: 800, fontSize: 'clamp(15px, 4vw, 17px)' }}>{reviewToday.length}</div>
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ color: 'rgba(255,255,255,0.8)' }}>Завтра</div>
-                <div style={{ fontWeight: 800 }}>{reviewTomorrow.length}</div>
+              <div>
+                <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 'clamp(11px, 3vw, 12px)' }}>Завтра</div>
+                <div style={{ fontWeight: 800, fontSize: 'clamp(15px, 4vw, 17px)' }}>{reviewTomorrow.length}</div>
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ color: 'rgba(255,255,255,0.8)' }}>Через тиждень</div>
-                <div style={{ fontWeight: 800 }}>{reviewWeek.length}</div>
+              <div>
+                <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 'clamp(11px, 3vw, 12px)' }}>Тиждень</div>
+                <div style={{ fontWeight: 800, fontSize: 'clamp(15px, 4vw, 17px)' }}>{reviewWeek.length}</div>
               </div>
             </div>
-            <div>
-              <button style={styles.repeatBtn} onClick={() => { if (onRepeatNow) onRepeatNow(); else alert(`Почати повторення: ${reviewToday.length} слів (не налаштовано)`); }}>Повторити зараз →</button>
-            </div>
+            <button style={styles.repeatBtn} onClick={() => { if (onRepeatNow) onRepeatNow(); else alert(`Почати повторення: ${reviewToday.length} слів`); }}>Повторити →</button>
           </div>
 
-          <div style={{ width: 320, background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 12 }}>
-            <div style={{ fontWeight: 800, color: '#e2b96f' }}>🏆 Рівні знань</div>
+          <div style={{ background: 'rgba(255,255,255,0.03)', padding: 10, borderRadius: 8 }}>
+            <div style={{ fontWeight: 800, color: '#e2b96f', fontSize: 'clamp(13px, 4vw, 15px)' }}>🏆 Рівні знань</div>
             <div style={styles.levelsGrid}>
-              <div style={styles.levelItem}>⭐<div style={{ fontWeight: 800 }}>{levelCounts[0]}</div><div style={{ color: 'rgba(255,255,255,0.7)' }}>Рівень 1</div></div>
-              <div style={styles.levelItem}>⭐⭐<div style={{ fontWeight: 800 }}>{levelCounts[1]}</div><div style={{ color: 'rgba(255,255,255,0.7)' }}>Рівень 2</div></div>
-              <div style={styles.levelItem}>⭐⭐⭐<div style={{ fontWeight: 800 }}>{levelCounts[2]}</div><div style={{ color: 'rgba(255,255,255,0.7)' }}>Рівень 3</div></div>
-              <div style={styles.levelItem}>⭐⭐⭐⭐<div style={{ fontWeight: 800 }}>{levelCounts[3]}</div><div style={{ color: 'rgba(255,255,255,0.7)' }}>Рівень 4</div></div>
-              <div style={styles.levelItem}>⭐⭐⭐⭐⭐<div style={{ fontWeight: 800 }}>{levelCounts[4]}</div><div style={{ color: 'rgba(255,255,255,0.7)' }}>Рівень 5</div></div>
+              <div style={styles.levelItem}>⭐<div style={{ fontWeight: 800 }}>{levelCounts[0]}</div></div>
+              <div style={styles.levelItem}>⭐⭐<div style={{ fontWeight: 800 }}>{levelCounts[1]}</div></div>
+              <div style={styles.levelItem}>⭐⭐⭐<div style={{ fontWeight: 800 }}>{levelCounts[2]}</div></div>
+              <div style={styles.levelItem}>⭐⭐⭐⭐<div style={{ fontWeight: 800 }}>{levelCounts[3]}</div></div>
+              <div style={styles.levelItem}>⭐⭐⭐⭐⭐<div style={{ fontWeight: 800 }}>{levelCounts[4]}</div></div>
             </div>
           </div>
         </div>

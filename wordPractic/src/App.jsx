@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import storage from './storage'
 import MenuScreen from './components/MenuScreen'
 import GameScreen from './components/GameScreen'
 import StatisticsScreen from './components/StatisticsScreen'
+import WordsListScreen from './components/WordsListScreen'
+import WordDetailScreen from './components/WordDetailScreen'
 import { makeWordKey, createBaseWordProgress, updateWordProgressRecord, DEFAULT_SET_ID } from './utils'
 
 export default function App() {
-  const [screen, setScreen] = useState('menu')
+  const navigate = useNavigate()
   const [selectedWords, setSelectedWords] = useState(null)
   const [selectedSetName, setSelectedSetName] = useState('')
   const [selectedSetId, setSelectedSetId] = useState(DEFAULT_SET_ID)
@@ -48,7 +51,7 @@ export default function App() {
     setSelectedWords(words)
     setSelectedSetName(name)
     setSelectedSetId(setId)
-    setScreen('game')
+    navigate('/game')
   }
 
   const handleAddSet = async (name, words) => {
@@ -83,32 +86,55 @@ export default function App() {
   }
 
   const handleBack = async () => {
-    setScreen('menu')
+    navigate('/')
     await loadWordSets()
     await loadProgressData()
   }
 
   const handleShowStats = () => {
-    setScreen('stats')
+    navigate('/stats')
   }
 
-  return screen === 'menu' ? (
-    <MenuScreen
-      onSelectWords={handleSelectWords}
-      wordSets={wordSets}
-      onDeleteSet={handleDeleteSet}
-      onShowStats={handleShowStats}
-      onAddSet={handleAddSet}
-    />
-  ) : screen === 'stats' ? (
-    <StatisticsScreen progressData={progressData} onBack={handleBack} />
-  ) : (
-    <GameScreen
-      words={selectedWords}
-      setName={selectedSetName}
-      setId={selectedSetId}
-      onProgressUpdate={handleProgressUpdate}
-      onBack={handleBack}
-    />
+  const handleShowWords = () => {
+    navigate('/words')
+  }
+
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <MenuScreen
+            onSelectWords={handleSelectWords}
+            wordSets={wordSets}
+            progressData={progressData}
+            onDeleteSet={handleDeleteSet}
+            onShowStats={handleShowStats}
+            onShowWords={handleShowWords}
+            onAddSet={handleAddSet}
+          />
+        }
+      />
+      <Route
+        path="/game"
+        element={
+          selectedWords ? (
+            <GameScreen
+              words={selectedWords}
+              setName={selectedSetName}
+              setId={selectedSetId}
+              onProgressUpdate={handleProgressUpdate}
+              onBack={handleBack}
+            />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+      <Route path="/stats" element={<StatisticsScreen progressData={progressData} onBack={handleBack} onShowWords={handleShowWords} />} />
+      <Route path="/words" element={<WordsListScreen progressData={progressData} onBack={handleBack} />} />
+      <Route path="/word/:wordKey" element={<WordDetailScreen progressData={progressData} />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }

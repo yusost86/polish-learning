@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { DEFAULT_WORDS } from '../utils'
 
-export default function MenuScreen({ onSelectWords, wordSets, onDeleteSet, onShowStats, onAddSet }) {
+export default function MenuScreen({ onSelectWords, wordSets, progressData, onDeleteSet, onShowStats, onShowWords, onAddSet }) {
   const fileInputRef = useRef(null)
   const [showPasteModal, setShowPasteModal] = useState(false)
   const [pasteText, setPasteText] = useState('')
@@ -34,7 +34,6 @@ export default function MenuScreen({ onSelectWords, wordSets, onDeleteSet, onSho
 
       const id = await onAddSet(pasteSetName || 'Новий набір', data)
       alert(`✅ Завантажено: ${data.length} слів!`)
-      onSelectWords(data, pasteSetName || 'Новий набір', id)
       setShowPasteModal(false)
       setPasteText('')
       setPasteSetName('Новий набір')
@@ -78,6 +77,10 @@ export default function MenuScreen({ onSelectWords, wordSets, onDeleteSet, onSho
     }
   }
 
+  const totalUniqueWords = progressData?.length ?? 0
+  const learnedWordsCount = progressData?.filter((item) => item.status === 'learned').length ?? 0
+  const newWordsCount = progressData?.filter((item) => (item.attempts || 0) === 0).length ?? 0
+
   const styles = {
     app: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' },
     card: { background: 'rgba(255,255,255,0.05)', borderRadius: '24px', padding: '36px 32px', maxWidth: '500px', width: '100%' },
@@ -86,6 +89,10 @@ export default function MenuScreen({ onSelectWords, wordSets, onDeleteSet, onSho
     btn: { width: '100%', padding: '16px', marginBottom: '12px', border: 'none', borderRadius: '14px', fontSize: '16px', fontWeight: 700, cursor: 'pointer' },
     primaryBtn: { background: 'linear-gradient(135deg, #e2b96f, #c99a40)', color: '#1a1a2e' },
     secondaryBtn: { background: 'rgba(226,185,111,0.1)', border: '1px solid rgba(226,185,111,0.3)', color: '#e2b96f' },
+    progressCard: { background: 'rgba(255,255,255,0.03)', borderRadius: '18px', padding: '18px', marginTop: '24px', border: '1px solid rgba(255,255,255,0.08)' },
+    progressRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' },
+    progressLabel: { color: 'rgba(255,255,255,0.7)', fontSize: '14px' },
+    progressValue: { color: '#fff', fontWeight: 700, fontSize: '14px' },
     setsList: { marginTop: '24px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '24px' },
     setItem: { background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '16px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     setName: { color: '#fff', fontSize: '14px', fontWeight: 600, flex: 1 },
@@ -118,29 +125,29 @@ export default function MenuScreen({ onSelectWords, wordSets, onDeleteSet, onSho
           📊 Статистика прогресу
         </button>
 
-        {wordSets.length > 0 && (
-          <div style={styles.setsList}>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginBottom: '12px', letterSpacing: '1px', textTransform: 'uppercase' }}>
-              📦 Твої наборі слів:
-            </div>
-            {wordSets.map((set) => (
-              <div key={set.id} style={styles.setItem}>
-                <div>
-                  <div style={styles.setName}>{set.name}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>{set.words.length} слів</div>
-                </div>
-                <div style={styles.btnsContainer}>
-                  <button aria-label={`Play set ${set.name}`} style={{ ...styles.smallBtn, ...styles.playBtn }} onClick={() => onSelectWords(set.words, set.name, set.id)}>
-                    ▶️ Грати
-                  </button>
-                  <button aria-label={`Delete set ${set.name}`} style={{ ...styles.smallBtn, ...styles.deleteBtn }} onClick={() => onDeleteSet(set.id)}>
-                    ✕
-                  </button>
-                </div>
-              </div>
-            ))}
+        <button aria-label="Show words list" style={{ ...styles.btn, ...styles.secondaryBtn }} onClick={onShowWords}>
+          📖 Всі слова
+        </button>
+
+        <div style={styles.progressCard}>
+          <div style={{ fontSize: '14px', fontWeight: 700, color: '#e2b96f', marginBottom: '12px' }}>📦 Загальний словник</div>
+          <div style={styles.progressRow}>
+            <span style={styles.progressLabel}>Унікальних слів</span>
+            <span style={styles.progressValue}>{totalUniqueWords}</span>
           </div>
-        )}
+          <div style={styles.progressRow}>
+            <span style={styles.progressLabel}>Нових слів</span>
+            <span style={styles.progressValue}>{newWordsCount}</span>
+          </div>
+          <div style={styles.progressRow}>
+            <span style={styles.progressLabel}>Вивчених слів</span>
+            <span style={styles.progressValue}>{learnedWordsCount}</span>
+          </div>
+          <div style={styles.progressRow}>
+            <span style={styles.progressLabel}>Прогрес</span>
+            <span style={styles.progressValue}>{totalUniqueWords ? Math.round((learnedWordsCount / totalUniqueWords) * 100) : 0}%</span>
+          </div>
+        </div>
 
         {showPasteModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', zIndex: 1000 }}>
