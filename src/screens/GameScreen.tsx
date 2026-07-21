@@ -22,6 +22,14 @@ const GRADE_BUTTONS: { grade: Grade; label: string; sub: string; color: string }
   { grade: Rating.Easy, label: 'Легко', sub: '~7д', color: 'var(--blue)' },
 ]
 
+/**
+ * Loader shell: fetches the session's cards + words once, then hands off to
+ * <GameSession> which mounts the learning-session hook fresh with the real
+ * data already in hand. Keeping this split matters: if the hook mounted here
+ * directly, it would capture an empty card list on the very first render
+ * (before the async fetch resolves) and never recover, since useState's
+ * lazy initializer only runs once per component instance.
+ */
 export default function GameScreen() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -31,8 +39,6 @@ export default function GameScreen() {
   const [loading, setLoading] = useState(true)
   const [initialCards, setInitialCards] = useState<StudentWord[]>([])
   const [wordsMap, setWordsMap] = useState<Record<string, Word>>({})
-  const [revealed, setRevealed] = useState(false)
-  const [direction, setDirection] = useState<ExerciseType>('FOREIGN_TO_NATIVE')
   const startedRef = useRef(false)
 
   useEffect(() => {
@@ -62,36 +68,17 @@ export default function GameScreen() {
     })()
   }, [state.topicId, state.subtopicId, state.mode])
 
-  const { currentCard, answer, stats, isFinished } = useLearningSession(initialCards)
-
-  const currentWord = currentCard ? wordsMap[currentCard.wordId] : undefined
-
-  useEffect(() => {
-    if (!currentCard) return
-    setRevealed(false)
-    const options = currentWord?.exerciseTypes.filter((t) => t === 'FOREIGN_TO_NATIVE' || t === 'NATIVE_TO_FOREIGN')
-    const pool = options && options.length ? options : ['FOREIGN_TO_NATIVE', 'NATIVE_TO_FOREIGN']
-    setDirection(pool[Math.floor(Math.random() * pool.length)] as ExerciseType)
-  }, [currentCard, currentWord])
-
   const handleBackToMenu = async () => {
     await reloadProgress()
     navigate('/')
   }
 
-  const handleGrade = (grade: Grade) => {
-    if (!currentWord) return
-    const isCorrect = grade !== Rating.Again
-    answer(grade, direction, isCorrect)
-  }
-
-  const progressPct = useMemo(() => {
-    if (stats.total === 0) return 0
-    return Math.round((stats.answered / stats.total) * 100)
-  }, [stats])
-
   if (loading) {
-    return <Centered><div style={{ color: 'var(--text-faint)' }}>Готуємо картки…</div></Centered>
+    return (
+      <Centered>
+        <div style={{ color: 'var(--text-faint)' }}>Готуємо картки…</div>
+      </Centered>
+    )
   }
 
   if (initialCards.length === 0) {
@@ -106,6 +93,44 @@ export default function GameScreen() {
     )
   }
 
+  return <GameSession initialCards={initialCards} wordsMap={wordsMap} onBackToMenu={handleBackToMenu} />
+}
+
+function GameSession({
+  initialCards,
+  wordsMap,
+  onBackToMenu,
+}: {
+  initialCards: StudentWord[]
+  wordsMap: Record<string, Word>
+  onBackToMenu: () => void
+}) {
+  const { currentCard, answer, stats, isFinished } = useLearningSession(initialCards)
+
+  const [revealed, setRevealed] = useState(false)
+  const [direction, setDirection] = useState<ExerciseType>('FOREIGN_TO_NATIVE')
+
+  const currentWord = currentCard ? wordsMap[currentCard.wordId] : undefined
+
+  useEffect(() => {
+    if (!currentCard) return
+    setRevealed(false)
+    const options = currentWord?.exerciseTypes.filter((t) => t === 'FOREIGN_TO_NATIVE' || t === 'NATIVE_TO_FOREIGN')
+    const pool = options && options.length ? options : ['FOREIGN_TO_NATIVE', 'NATIVE_TO_FOREIGN']
+    setDirection(pool[Math.floor(Math.random() * pool.length)] as ExerciseType)
+  }, [currentCard, currentWord])
+
+  const handleGrade = (grade: Grade) => {
+    if (!currentWord) return
+    const isCorrect = grade !== Rating.Again
+    answer(grade, direction, isCorrect)
+  }
+
+  const progressPct = useMemo(() => {
+    if (stats.total === 0) return 0
+    return Math.round((stats.answered / stats.total) * 100)
+  }, [stats])
+
   if (isFinished || !currentCard || !currentWord) {
     return (
       <Centered>
@@ -115,7 +140,7 @@ export default function GameScreen() {
           Відповідей: <span className="mono">{stats.answered}</span> · Правильно:{' '}
           <span className="mono">{stats.correct}</span>
         </div>
-        <BackButton onClick={handleBackToMenu} />
+        <BackButton onClick={onBackToMenu} />
       </Centered>
     )
   }
@@ -130,7 +155,7 @@ export default function GameScreen() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, flex: 1 }}>
       <header style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <button
-          onClick={handleBackToMenu}
+          onClick={onBackToMenu}
           aria-label="Назад"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 999, width: 38, height: 38, color: 'var(--text)', fontSize: 16 }}
         >
