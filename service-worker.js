@@ -5,7 +5,6 @@ const urlsToCache = [
   '/manifest.json',
   '/assets/index-B0w8Gozb.css',
   '/asserts/index-BHO90RFU.js',
-
 ];
 
 // Встановлення Service Worker
