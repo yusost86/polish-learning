@@ -1,5 +1,7 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { WordProgressRecord, WordSetModel } from '../utils';
+import { version } from '../../package.json'
+
 
 interface MenuScreenProps {
   onSelectWords: (words: Array<{ pl: string; uk: string }>, name: string, setId: string) => void;
@@ -13,7 +15,6 @@ interface MenuScreenProps {
 const MenuScreen: React.FC<MenuScreenProps> = (props) => {
   const { onSelectWords, wordSets, progressData, onDeleteSet, onShowStats, onShowWords, onAddSet } = props;
 
-  const fileInputRef = useRef(null as null | HTMLInputElement)
   const [showPasteModal, setShowPasteModal] = useState(false)
   const [pasteText, setPasteText] = useState('')
   const [pasteSetName, setPasteSetName] = useState('Новий232')
@@ -57,40 +58,6 @@ const MenuScreen: React.FC<MenuScreenProps> = (props) => {
   const opentt = () => {
     setDisplayWordSet(true);
   }
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event?.target?.files?.[0]
-    if (!file) return
-
-    try {
-      const text = await file.text()
-      const data = JSON.parse(text)
-
-      if (!Array.isArray(data) || data.length === 0) {
-        alert('❌ JSON мусить бути масивом з словами')
-        return
-      }
-
-      const isValid = data.every(
-        (item) => item.pl && item.uk && typeof item.pl === 'string' && typeof item.uk === 'string'
-      )
-
-      if (!isValid) {
-        alert('❌ Кожне слово мусить мати поля "pl" і "uk"')
-        return
-      }
-
-      const id = await onAddSet(file.name.replace('.json', ''), data)
-      alert(`✅ Завантажено: ${data.length} слів!`)
-      onSelectWords(data, file.name.replace('.json', ''), id)
-      return id
-    } catch (error:any) {
-      alert(`❌ Помилка: ${error?.message || 'Невідома помилка'}`)
-    } finally {
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
-    }
-  }
 
   const totalUniqueWords = progressData?.length ?? 0
   const learnedWordsCount = progressData?.filter((item) => item.status === 'learned').length ?? 0
@@ -121,13 +88,8 @@ const MenuScreen: React.FC<MenuScreenProps> = (props) => {
     <div style={styles.app}>
       <div style={styles.card}>
         <div style={styles.title as any}>Пол ↔ Укр 🎮</div>
+        <div style={styles.subtitle as any}>Версія:{version}</div>
         <div style={styles.subtitle as any}>Завантаж свої слова або грай зі стандартного набору</div>
-
-        <input aria-label="Upload words JSON" ref={fileInputRef as any} type="file" accept=".json" onChange={handleFileSelect} />
-
-        <button aria-label="Upload words JSON" style={{ ...styles.btn, ...styles.primaryBtn }} onClick={() => fileInputRef.current?.click()}>
-          📁 Завантажити JSON зі словами
-        </button>
 
         <button aria-label="Paste JSON words" style={{ ...styles.btn, ...styles.primaryBtn }} onClick={() => setShowPasteModal(true)}>
           📋 Вставити JSON фрагмент

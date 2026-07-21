@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {WordProgressRecord } from '../utils'
+import { WordProgressRecord } from '../utils'
 
 interface WordsListScreenProps {
   progressData: Array<WordProgressRecord>
@@ -10,7 +10,7 @@ interface WordsListScreenProps {
 export default function WordsListScreen({ progressData, onBack }: WordsListScreenProps) {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
-  const [sortBy, setSortBy] = useState('date') // 'date', 'nameDesc', 'level'
+  const [sortBy, setSortBy] = useState('date' as 'date asc' | 'date desc' | 'nameDesc' | 'nameAsc' | 'levelAsc' | 'levelDesc') // 'date', 'nameDesc', 'level'
 
   // Filter by search query
   const filteredWords = useMemo(
@@ -25,13 +25,19 @@ export default function WordsListScreen({ progressData, onBack }: WordsListScree
   // Sort filtered words
   const sortedWords = useMemo(() => {
     const words = [...filteredWords]
-    
+
     switch (sortBy) {
       case 'nameDesc':
         return words.sort((a, b) => b.word.pl.localeCompare(a.word.pl, 'uk'))
-      case 'level':
+      case 'nameAsc':
+        return words.sort((a, b) => a.word.pl.localeCompare(b.word.pl, 'uk'))
+      case 'levelDesc':
         return words.sort((a, b) => (b.level || 1) - (a.level || 1))
-      case 'date':
+      case 'levelAsc':
+        return words.sort((a, b) => (a.level || 1) - (b.level || 1))
+      case 'date desc':
+        return words.sort((a, b) => new Date(a.addedAt) as any - (new Date(b.addedAt) as any))
+      case 'date asc':
       default:
         return words.sort((a, b) => new Date(b.addedAt) as any - (new Date(a.addedAt) as any))
     }
@@ -249,10 +255,13 @@ export default function WordsListScreen({ progressData, onBack }: WordsListScree
             onChange={(e) => setSearchQuery(e.target.value)}
             style={styles.searchInput}
           />
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={styles.sortSelect}>
-            <option value="date">📅 По даті додавання</option>
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} style={styles.sortSelect}>
+            <option value="date asc">📅 По даті додавання</option>
+            <option value="nameAsc">🔤 По імені (А-Я)</option>
+            <option value="levelDesc">⭐ По рівню (desc)</option>
+            <option value="levelAsc">⭐ По рівню (asc)</option>
+            <option value="date desc">📅 По даті додавання desc</option>
             <option value="nameDesc">🔤 По імені (Я-А)</option>
-            <option value="level">⭐ По рівню (desc)</option>
           </select>
         </div>
 
