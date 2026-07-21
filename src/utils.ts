@@ -1,49 +1,34 @@
-export const DEFAULT_WORDS = [
-  { pl: 'jabłko', uk: 'яблуко' },
-  { pl: 'pies', uk: 'собака' },
-  { pl: 'kot', uk: 'кіт' },
-  { pl: 'dom', uk: 'будинок' },
-  { pl: 'woda', uk: 'вода' },
-  { pl: 'chleb', uk: 'хліб' },
-  { pl: 'słońce', uk: 'сонце' },
-  { pl: 'księżyc', uk: 'місяць' },
-  { pl: 'drzewo', uk: 'дерево' },
-  { pl: 'kwiat', uk: 'квітка' },
-  { pl: 'samochód', uk: 'автомобіль' },
-  { pl: 'miasto', uk: 'місто' },
-  { pl: 'rzeka', uk: 'річка' },
-  { pl: 'góra', uk: 'гора' },
-  { pl: 'książka', uk: 'книга' },
-  { pl: 'szkoła', uk: 'школа' },
-  { pl: 'przyjaciel', uk: 'друг' },
-  { pl: 'rodzina', uk: "сім'я" },
-  { pl: 'miłość', uk: 'кохання' },
-  { pl: 'czas', uk: 'час' },
-  { pl: 'okno', uk: 'вікно' },
-  { pl: 'drzwi', uk: 'двері' },
-  { pl: 'stół', uk: 'стіл' },
-  { pl: 'krzesło', uk: 'стілець' },
-  { pl: 'lampa', uk: 'лампа' },
-  { pl: 'telefon', uk: 'телефон' },
-  { pl: 'muzyka', uk: 'музика' },
-  { pl: 'jedzenie', uk: 'їжа' },
-  { pl: 'herbata', uk: 'чай' },
-  { pl: 'kawa', uk: 'кава' },
+export const DEFAULT_WORDS: Array<WordModel> = [
+  { pl: 'jabłko', uk: 'яблуко' }
 ]
 
-export const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5)
-
-export const generateOptions = (correct, all) => {
+export const shuffle = (arr: Array<WordModel>) => [...arr].sort(() => Math.random() - 0.5)
+export const generateOptions = (correct: WordModel, all: Array<WordModel>) => {
   const wrong = shuffle(all.filter((w) => w.uk !== correct.uk)).slice(0, 3)
   return shuffle([correct, ...wrong])
 }
 
 export const DEFAULT_SET_ID = 'default'
-export const REVIEW_INTERVAL_DAYS = { 1: 1, 2: 2, 3: 4, 4: 7, 5: 14 }
 
-export const makeWordKey = (setId, word) => `${setId}|${word.pl}|${word.uk}`
+export type REVIEW_INTERVAL_DAYSModel = {
+  [level: number]: number
+}
+export const REVIEW_INTERVAL_DAYS: REVIEW_INTERVAL_DAYSModel = { 1: 1, 2: 2, 3: 4, 4: 7, 5: 14 }
 
-export const formatDate = (isoString) => {
+
+export interface WordSetModel {
+  id: string,
+  name: string
+  words: Array<WordModel>,
+  createdAt: string
+}
+export interface WordModel {
+  pl: string,
+  uk: string
+}
+export const makeWordKey = (setId: string, word: WordModel) => `${setId}|${word.pl}|${word.uk}`
+
+export const formatDate = (isoString: string | null | undefined) => {
   if (!isoString) return '—'
   return new Date(isoString).toLocaleString('uk-UA', {
     year: 'numeric',
@@ -54,7 +39,7 @@ export const formatDate = (isoString) => {
   })
 }
 
-export const createBaseWordProgress = (setId, word) => {
+export const createBaseWordProgress = (setId: string, word: WordModel): WordProgressRecord => {
   const now = new Date().toISOString()
   return {
     wordKey: makeWordKey(setId, word),
@@ -74,14 +59,38 @@ export const createBaseWordProgress = (setId, word) => {
   }
 }
 
-export const getNextReviewDate = (level) => {
+export const getNextReviewDate = (level: number) => {
   const interval = REVIEW_INTERVAL_DAYS[level] ?? 1
   const next = new Date()
   next.setDate(next.getDate() + interval)
   return next.toISOString()
 }
 
-export const updateWordProgressRecord = (record, correct) => {
+export interface WordProgressRecord {
+  wordKey: string,
+  setId: string,
+  word: WordModel,
+  addedAt: string,
+  status: 'not learned' | 'learned',
+  lastReviewAt: string | null,
+  nextReviewAt: string,
+  correctCount: number,
+  wrongCount: number,
+  attempts: number,
+  accuracy: number,
+  streak: number,
+  level: number,
+  history: Array<{
+    timestamp: string,
+    correct: boolean,
+    level: number,
+    streak: number,
+    attempts: number,
+    accuracy: number,
+  }>
+}
+
+export const updateWordProgressRecord = (record: WordProgressRecord, correct: boolean): WordProgressRecord => {
   const now = new Date().toISOString()
   const correctCount = record.correctCount + (correct ? 1 : 0)
   const wrongCount = record.wrongCount + (correct ? 0 : 1)

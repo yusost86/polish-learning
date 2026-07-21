@@ -1,12 +1,24 @@
 import { useRef, useState } from 'react'
-import { DEFAULT_WORDS } from '../utils'
+import { WordProgressRecord, WordSetModel } from '../utils';
 
-export default function MenuScreen({ onSelectWords, wordSets, progressData, onDeleteSet, onShowStats, onShowWords, onAddSet }) {
-  const fileInputRef = useRef(null)
+interface MenuScreenProps {
+  onSelectWords: (words: Array<{ pl: string; uk: string }>, name: string, setId: string) => void;
+  wordSets: WordSetModel[];
+  progressData: WordProgressRecord[];
+  onDeleteSet: (setId: string) => void;
+  onShowStats: () => void;
+  onShowWords: () => void;
+  onAddSet: (name: string, words: Array<{ pl: string; uk: string }>) => Promise<string>;
+}
+const MenuScreen: React.FC<MenuScreenProps> = (props) => {
+  const { onSelectWords, wordSets, progressData, onDeleteSet, onShowStats, onShowWords, onAddSet } = props;
+
+  const fileInputRef = useRef(null as null | HTMLInputElement)
   const [showPasteModal, setShowPasteModal] = useState(false)
   const [pasteText, setPasteText] = useState('')
-  const [pasteSetName, setPasteSetName] = useState('Новий набір')
-  const [pasteError, setPasteError] = useState('')
+  const [pasteSetName, setPasteSetName] = useState('Новий232')
+  const [pasteError, setPasteError] = useState('');
+  const [displAYwORDSsET, setDisplayWordSet] = useState(null as boolean | null);
 
   const validateAndPasteJSON = async () => {
     setPasteError('')
@@ -14,6 +26,7 @@ export default function MenuScreen({ onSelectWords, wordSets, progressData, onDe
       setPasteError('Введіть JSON')
       return
     }
+
 
     try {
       const data = JSON.parse(pasteText)
@@ -32,18 +45,20 @@ export default function MenuScreen({ onSelectWords, wordSets, progressData, onDe
         return
       }
 
-      const id = await onAddSet(pasteSetName || 'Новий набір', data)
+       await onAddSet(pasteSetName || 'Новий набір111', data)
       alert(`✅ Завантажено: ${data.length} слів!`)
       setShowPasteModal(false)
       setPasteText('')
       setPasteSetName('Новий набір')
-    } catch (error) {
+    } catch (error: any) {
       setPasteError(`Помилка парсингу: ${error.message}`)
     }
   }
-
-  const handleFileSelect = async (event) => {
-    const file = event.target.files[0]
+  const opentt = () => {
+    setDisplayWordSet(true);
+  }
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event?.target?.files?.[0]
     if (!file) return
 
     try {
@@ -68,8 +83,8 @@ export default function MenuScreen({ onSelectWords, wordSets, progressData, onDe
       alert(`✅ Завантажено: ${data.length} слів!`)
       onSelectWords(data, file.name.replace('.json', ''), id)
       return id
-    } catch (error) {
-      alert(`❌ Помилка: ${error.message}`)
+    } catch (error:any) {
+      alert(`❌ Помилка: ${error?.message || 'Невідома помилка'}`)
     } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
@@ -105,10 +120,10 @@ export default function MenuScreen({ onSelectWords, wordSets, progressData, onDe
   return (
     <div style={styles.app}>
       <div style={styles.card}>
-        <div style={styles.title}>Пол ↔ Укр 🎮</div>
-        <div style={styles.subtitle}>Завантаж свої слова або грай зі стандартного набору</div>
+        <div style={styles.title as any}>Пол ↔ Укр 🎮</div>
+        <div style={styles.subtitle as any}>Завантаж свої слова або грай зі стандартного набору</div>
 
-        <input aria-label="Upload words JSON" ref={fileInputRef} type="file" accept=".json" onChange={handleFileSelect} />
+        <input aria-label="Upload words JSON" ref={fileInputRef as any} type="file" accept=".json" onChange={handleFileSelect} />
 
         <button aria-label="Upload words JSON" style={{ ...styles.btn, ...styles.primaryBtn }} onClick={() => fileInputRef.current?.click()}>
           📁 Завантажити JSON зі словами
@@ -118,7 +133,7 @@ export default function MenuScreen({ onSelectWords, wordSets, progressData, onDe
           📋 Вставити JSON фрагмент
         </button>
 
-        <button aria-label="Play default word set" style={{ ...styles.btn, ...styles.secondaryBtn }} onClick={() => onSelectWords(DEFAULT_WORDS, 'Стандартні слова', 'default')}>
+        <button aria-label="Play default word set" style={{ ...styles.btn, ...styles.secondaryBtn }} onClick={opentt}>
           📚 Грати зі стандартного набору (30 слів)
         </button>
         <button aria-label="Show statistics" style={{ ...styles.btn, ...styles.secondaryBtn }} onClick={onShowStats}>
@@ -168,7 +183,37 @@ export default function MenuScreen({ onSelectWords, wordSets, progressData, onDe
             </div>
           </div>
         )}
+        {
+          displAYwORDSsET &&
+          (
+            <div style={styles.setsList}>
+              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginBottom: '12px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                📦 Твої наборі слів:
+              </div>
+              {wordSets.map((set) => (
+                <div key={set.id} style={styles.setItem}>
+                  <div>
+                    <div style={styles.setName}>{set.name}</div>
+                    <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>{set.words.length} слів</div>
+                  </div>
+                  <div style={styles.btnsContainer}>
+                    <button aria-label={`Play set ${set.name}`} style={{ ...styles.smallBtn, ...styles.playBtn }} onClick={() => onSelectWords(set.words, set.name, set.id)}>
+                      ▶️ Грати
+                    </button>
+                    <button aria-label={`Delete set ${set.name}`} style={{ ...styles.smallBtn, ...styles.deleteBtn }} onClick={() => onDeleteSet(set.id)}>
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
       </div>
     </div>
   )
 }
+
+
+
+export default MenuScreen

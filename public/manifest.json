@@ -1,8 +1,8 @@
 {
    "name": "Польська → Українська",
   "short_name": "Пол↔Укр",
-  "start_url": "/",
-  "scope": "/",
+    "start_url": "/polish-learning/",
+  "scope": "/polish-learning/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#1a1a2e",

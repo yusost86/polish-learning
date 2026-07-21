@@ -1,6 +1,18 @@
-import { formatDate, DEFAULT_SET_ID } from '../utils'
+import React from "react"
+import { WordProgressRecord } from "../utils"
 
-export default function StatisticsScreen({ progressData, onBack, onRepeatNow, onShowWords }) {
+interface StatisticsScreenProps {
+  progressData: Array<WordProgressRecord>,
+  onBack: () => void,
+  onRepeatNow?: () => void,
+  onShowWords: () => void,
+}
+
+
+const StatisticsScreen: React.FC<StatisticsScreenProps> = (props: StatisticsScreenProps) => {
+
+  const { progressData, onBack, onRepeatNow, onShowWords } = props;
+
   const totalWords = progressData.length
   const learnedWords = progressData.filter((item) => item.status === 'learned').length
 
@@ -24,7 +36,7 @@ export default function StatisticsScreen({ progressData, onBack, onRepeatNow, on
   const allHistory = progressData.flatMap((item) => (item.history || []).map((h) => ({ ...h, word: item.word.pl, timestamp: h.timestamp })))
 
   // Set of days (YYYY-MM-DD) with at least one correct answer
-  const dayKey = (iso) => new Date(iso).toISOString().slice(0, 10)
+  const dayKey = (iso:string) => new Date(iso).toISOString().slice(0, 10)
   const correctDaysSet = new Set(allHistory.filter((h) => h.correct).map((h) => dayKey(h.timestamp)))
 
   // compute consecutive streak of days ending today
@@ -78,9 +90,9 @@ export default function StatisticsScreen({ progressData, onBack, onRepeatNow, on
   }
 
   return (
-    <div style={styles.app}>
+    <div style={{ ...styles.app } as any}>
       <div style={styles.card}>
-        <div style={styles.header}>
+        <div style={styles.header as any}>
           <div>
             <div style={styles.title}>Статистика прогресу</div>
             <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 'clamp(12px, 3vw, 13px)' }}>Огляд твоєї активності та повторень</div>
@@ -160,11 +172,11 @@ export default function StatisticsScreen({ progressData, onBack, onRepeatNow, on
           <div style={{ background: 'rgba(255,255,255,0.03)', padding: 10, borderRadius: 8 }}>
             <div style={{ fontWeight: 800, color: '#e2b96f', fontSize: 'clamp(13px, 4vw, 15px)' }}>🏆 Рівні знань</div>
             <div style={styles.levelsGrid}>
-              <div style={styles.levelItem}>⭐<div style={{ fontWeight: 800 }}>{levelCounts[0]}</div></div>
-              <div style={styles.levelItem}>⭐⭐<div style={{ fontWeight: 800 }}>{levelCounts[1]}</div></div>
-              <div style={styles.levelItem}>⭐⭐⭐<div style={{ fontWeight: 800 }}>{levelCounts[2]}</div></div>
-              <div style={styles.levelItem}>⭐⭐⭐⭐<div style={{ fontWeight: 800 }}>{levelCounts[3]}</div></div>
-              <div style={styles.levelItem}>⭐⭐⭐⭐⭐<div style={{ fontWeight: 800 }}>{levelCounts[4]}</div></div>
+              <div style={styles.levelItem as any}>⭐<div style={{ fontWeight: 800 }}>{levelCounts[0]}</div></div>
+              <div style={styles.levelItem as any}>⭐⭐<div style={{ fontWeight: 800 }}>{levelCounts[1]}</div></div>
+              <div style={styles.levelItem as any}>⭐⭐⭐<div style={{ fontWeight: 800 }}>{levelCounts[2]}</div></div>
+              <div style={styles.levelItem as any}>⭐⭐⭐⭐<div style={{ fontWeight: 800 }}>{levelCounts[3]}</div></div>
+              <div style={styles.levelItem as any}>⭐⭐⭐⭐⭐<div style={{ fontWeight: 800 }}>{levelCounts[4]}</div></div>
             </div>
           </div>
         </div>
@@ -172,3 +184,6 @@ export default function StatisticsScreen({ progressData, onBack, onRepeatNow, on
     </div>
   )
 }
+
+
+export default StatisticsScreen

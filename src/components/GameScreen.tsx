@@ -1,15 +1,24 @@
 import { useCallback, useEffect, useState } from 'react'
-import { shuffle, generateOptions } from '../utils'
+import { shuffle, generateOptions, WordModel } from '../utils'
 
-export default function GameScreen({ words, setName, setId, onProgressUpdate, onBack }) {
-  const [deck, setDeck] = useState([])
+
+interface GameScreenProps {
+  words: Array<WordModel>
+  setName: string
+  setId: string
+  onProgressUpdate?: (setId: string, word: WordModel, correct: boolean) => void
+  onBack: () => void
+}
+
+export default function GameScreen({ words, setName, setId, onProgressUpdate, onBack }: GameScreenProps) {
+  const [deck, setDeck] = useState([] as WordModel[])
   const [index, setIndex] = useState(0)
-  const [options, setOptions] = useState([])
-  const [selected, setSelected] = useState(null)
+  const [options, setOptions] = useState([] as WordModel[])
+  const [selected, setSelected] = useState(null as WordModel | null)
   const [score, setScore] = useState(0)
   const [finished, setFinished] = useState(false)
   const [streak, setStreak] = useState(0)
-  const [bestStreak, setBestStreak] = useState(0)
+  const [_, setBestStreak] = useState(0)
   const [answered, setAnswered] = useState(false)
 
   const ROUND = Math.min(10, words.length)
@@ -35,7 +44,7 @@ export default function GameScreen({ words, setName, setId, onProgressUpdate, on
     startGame()
   }, [startGame])
 
-  const handleAnswer = (opt) => {
+  const handleAnswer = (opt: WordModel) => {
     if (answered) return
     setSelected(opt)
     setAnswered(true)
@@ -70,7 +79,7 @@ export default function GameScreen({ words, setName, setId, onProgressUpdate, on
 
   const stars = score >= ROUND * 0.9 ? 3 : score >= ROUND * 0.7 ? 2 : score >= ROUND * 0.5 ? 1 : 0
 
-  const buttonStyle = (opt) => {
+  const buttonStyle = (opt: WordModel) => {
     const current = deck[index]
     let bg = 'rgba(255,255,255,0.06)'
     let border = '1px solid rgba(255,255,255,0.1)'
@@ -146,30 +155,30 @@ export default function GameScreen({ words, setName, setId, onProgressUpdate, on
   return (
     <div style={styles.app}>
       <div style={styles.card}>
-        <div style={styles.setTitle}>Набір: "{setName}"</div>
+        <div style={styles.setTitle as any}>Набір: "{setName}"</div>
         <div style={styles.header}>
           <span style={styles.title}>ПЛ → УКР</span>
-          <span style={styles.scoreBar}>✓ {score} / {index} ({ROUND - index} лишилось)</span>
+          <span style={styles.scoreBar as any}>✓ {score} / {index} ({ROUND - index} лишилось)</span>
         </div>
 
         <div style={styles.progress}><div style={styles.progressFill} /></div>
 
-        <div style={styles.wordBox}>
+        <div style={styles.wordBox as any}>
           <span style={styles.langLabel}>Польське слово</span>
           <div style={styles.word}>{current.pl}</div>
         </div>
 
-        <div style={styles.question}>Оберіть переклад українською:</div>
+        <div style={styles.question as any}>Оберіть переклад українською:</div>
 
         <div style={styles.options}>
           {options.map((opt) => (
-            <button key={opt.uk} style={buttonStyle(opt)} onClick={() => handleAnswer(opt)}>
+            <button key={opt.uk} style={buttonStyle(opt) as any} onClick={() => handleAnswer(opt)}>
               {opt.uk}
             </button>
           ))}
         </div>
 
-        <div style={styles.streak}>
+        <div style={styles.streak as any}>
           {answered && selected?.uk === current.uk && streak > 1
             ? `🔥 Серія: ${streak}!`
             : answered && selected?.uk !== current.uk

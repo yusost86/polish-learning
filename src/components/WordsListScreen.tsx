@@ -1,8 +1,13 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { formatDate } from '../utils'
+import {WordProgressRecord } from '../utils'
 
-export default function WordsListScreen({ progressData, onBack }) {
+interface WordsListScreenProps {
+  progressData: Array<WordProgressRecord>
+  onBack: () => void
+}
+
+export default function WordsListScreen({ progressData, onBack }: WordsListScreenProps) {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('date') // 'date', 'nameDesc', 'level'
@@ -28,7 +33,7 @@ export default function WordsListScreen({ progressData, onBack }) {
         return words.sort((a, b) => (b.level || 1) - (a.level || 1))
       case 'date':
       default:
-        return words.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt))
+        return words.sort((a, b) => new Date(b.addedAt) as any - (new Date(a.addedAt) as any))
     }
   }, [filteredWords, sortBy])
 
@@ -214,12 +219,7 @@ export default function WordsListScreen({ progressData, onBack }) {
     },
   }
 
-  const getLevelStars = (level) => {
-    const normalizedLevel = Math.max(1, Math.min(5, level || 1))
-    return '⭐'.repeat(normalizedLevel)
-  }
-
-  const formatShortDate = (isoString) => {
+  const formatShortDate = (isoString: string | null) => {
     if (!isoString) return '—'
     const date = new Date(isoString)
     const day = String(date.getDate()).padStart(2, '0')
@@ -228,35 +228,20 @@ export default function WordsListScreen({ progressData, onBack }) {
     return `${day}/${month}/${year}`
   }
 
-  const formatFullDate = (isoString) => {
-    if (!isoString) return '—'
-    const date = new Date(isoString)
-    const day = String(date.getDate()).padStart(2, '0')
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const year = String(date.getFullYear()).padStart(4, '0')
-    const hours = String(date.getHours()).padStart(2, '0')
-    const minutes = String(date.getMinutes()).padStart(2, '0')
-    return `${day}.${month}.${year} ${hours}:${minutes}`
-  }
-
-  const formatLevelStars = (level) => {
+  const formatLevelStars = (level: number | null) => {
     const normalized = Math.max(1, Math.min(5, level || 1))
     return '⭐'.repeat(normalized) + '☆'.repeat(5 - normalized)
   }
 
-  const getStatusLabel = (status) => {
-    return status === 'learned' ? '✅ Вивчене' : '❌ Не вивчене'
-  }
-
   return (
     <div style={styles.app}>
-      <div style={styles.card}>
+      <div style={styles.card as any}>
         <div style={styles.header}>
           <div style={styles.title}>📖 Список слів ({sortedWords.length})</div>
           <button style={styles.backBtn} onClick={onBack}>← Назад</button>
         </div>
 
-        <div style={styles.filterContainer}>
+        <div style={styles.filterContainer as any}>
           <input
             type="text"
             placeholder="🔍 Шукати слово..."
@@ -271,15 +256,15 @@ export default function WordsListScreen({ progressData, onBack }) {
           </select>
         </div>
 
-        <div style={styles.listContainer}>
+        <div style={styles.listContainer as any}>
           {sortedWords.length === 0 ? (
-            <div style={styles.emptyState}>
+            <div style={styles.emptyState as any}>
               <div style={styles.emptyIcon}>{searchQuery ? '🔍' : '📚'}</div>
               <div>{searchQuery ? 'Слова не знайдені' : 'Поки немає слів'}</div>
             </div>
           ) : (
             <>
-              <div style={styles.tableHeader}>
+              <div style={styles.tableHeader as any}>
                 <div>🇵🇱 Слово</div>
                 <div>Рівень</div>
                 <div>Наступне повторення</div>

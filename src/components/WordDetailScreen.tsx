@@ -1,18 +1,19 @@
 import { useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { formatDate } from '../utils'
+import { WordProgressRecord } from '../utils'
 
-export default function WordDetailScreen({ progressData }) {
+
+const WordDetailScreen: React.FC<{ progressData: Array<WordProgressRecord> }> = ({ progressData }) => {
   const { wordKey } = useParams()
   const navigate = useNavigate()
   const decodedKey = wordKey ? decodeURIComponent(wordKey) : ''
 
   const record = useMemo(
-    () => progressData.find((item) => item.wordKey === decodedKey),
+    () => progressData.find((item: WordProgressRecord) => item.wordKey === decodedKey),
     [progressData, decodedKey]
   )
 
-  const formatShortDate = (isoString) => {
+  const formatShortDate = (isoString: string) => {
     if (!isoString) return '—'
     const date = new Date(isoString)
     const day = String(date.getDate()).padStart(2, '0')
@@ -21,7 +22,7 @@ export default function WordDetailScreen({ progressData }) {
     return `${day}.${month}.${year}`
   }
 
-  const formatFullDateTime = (isoString) => {
+  const formatFullDateTime = (isoString: string) => {
     if (!isoString) return '—'
     const date = new Date(isoString)
     const day = String(date.getDate()).padStart(2, '0')
@@ -32,12 +33,12 @@ export default function WordDetailScreen({ progressData }) {
     return `${day}.${month}.${year} ${hours}:${minutes}`
   }
 
-  const formatLevelStars = (level) => {
+  const formatLevelStars = (level: number) => {
     const normalized = Math.max(1, Math.min(5, level || 1))
     return '⭐'.repeat(normalized) + '☆'.repeat(5 - normalized)
   }
 
-  const getStatusLabel = (status) => (status === 'learned' ? '✅ Вивчене' : '❌ Не вивчене')
+  const getStatusLabel = (status: string) => (status === 'learned' ? '✅ Вивчене' : '❌ Не вивчене')
 
   if (!record) {
     return (
@@ -79,7 +80,7 @@ export default function WordDetailScreen({ progressData }) {
           </div>
           <div>
             <div style={{ color: 'rgba(255,255,255,0.75)', marginBottom: '8px' }}>Останнє повторення</div>
-            <div style={{ color: '#fff', fontWeight: 700 }}>{formatFullDateTime(record.lastReviewAt)}</div>
+            <div style={{ color: '#fff', fontWeight: 700 }}>{formatFullDateTime(record.lastReviewAt as any)}</div>
           </div>
           <div>
             <div style={{ color: 'rgba(255,255,255,0.75)', marginBottom: '8px' }}>Наступне повторення</div>
@@ -120,3 +121,6 @@ export default function WordDetailScreen({ progressData }) {
     </div>
   )
 }
+
+export default WordDetailScreen;
+

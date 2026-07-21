@@ -6,15 +6,15 @@ import GameScreen from './components/GameScreen'
 import StatisticsScreen from './components/StatisticsScreen'
 import WordsListScreen from './components/WordsListScreen'
 import WordDetailScreen from './components/WordDetailScreen'
-import { makeWordKey, createBaseWordProgress, updateWordProgressRecord, DEFAULT_SET_ID } from './utils'
+import { makeWordKey, createBaseWordProgress, updateWordProgressRecord, DEFAULT_SET_ID, WordSetModel, WordProgressRecord, WordModel } from './utils'
 
 export default function App() {
   const navigate = useNavigate()
-  const [selectedWords, setSelectedWords] = useState(null)
+  const [selectedWords, setSelectedWords] = useState<Array<WordModel>>([])
   const [selectedSetName, setSelectedSetName] = useState('')
   const [selectedSetId, setSelectedSetId] = useState(DEFAULT_SET_ID)
-  const [wordSets, setWordSets] = useState([])
-  const [progressData, setProgressData] = useState([])
+  const [wordSets, setWordSets] = useState([] as Array<WordSetModel>)
+  const [progressData, setProgressData] = useState<WordProgressRecord[]>([]);
 
   const loadWordSets = async () => {
     const sets = await storage.getWordSets()
@@ -33,7 +33,7 @@ export default function App() {
     })
   }, [])
 
-  const ensureProgressRecordsForSet = async (setId, words) => {
+  const ensureProgressRecordsForSet = async (setId: string, words: Array<WordModel>) => {
     const existing = await storage.getWordProgressBySet(setId)
     const existingKeys = new Set(existing.map((item) => item.wordKey))
     const missing = words
@@ -46,7 +46,7 @@ export default function App() {
     }
   }
 
-  const handleSelectWords = async (words, name, setId = DEFAULT_SET_ID) => {
+  const handleSelectWords = async (words: Array<WordModel>, name: string, setId = DEFAULT_SET_ID) => {
     await ensureProgressRecordsForSet(setId, words)
     setSelectedWords(words)
     setSelectedSetName(name)
@@ -54,14 +54,14 @@ export default function App() {
     navigate('/game')
   }
 
-  const handleAddSet = async (name, words) => {
+  const handleAddSet = async (name: string, words: Array<WordModel>) => {
     const id = await storage.addWordSet(name, words)
     await loadWordSets()
     await ensureProgressRecordsForSet(id, words)
     return id
   }
 
-  const handleProgressUpdate = async (setId, word, correct) => {
+  const handleProgressUpdate = async (setId: string, word: WordModel, correct: boolean) => {
     const wordKey = makeWordKey(setId, word)
     let record = await storage.getWordProgress(wordKey)
     if (!record) {
@@ -76,7 +76,7 @@ export default function App() {
     })
   }
 
-  const handleDeleteSet = async (id) => {
+  const handleDeleteSet = async (id: string) => {
     if (window.confirm('Видалити цей набір слів?')) {
       await storage.deleteWordSet(id)
       await storage.deleteProgressForSet(id)
