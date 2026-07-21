@@ -76,6 +76,38 @@ class WordStorage {
     })
   }
 
+  async addWordsToSet(id: string, newWords: Array<WordModel>) {
+    if (!this.db) await this.init()
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db?.transaction([this.wordSetStoreName], 'readwrite')
+      const store = transaction?.objectStore(this.wordSetStoreName)
+      const getRequest = store?.get(id)
+
+      if (!getRequest) {
+        reject(new Error('Failed to create request'))
+        return
+      }
+
+      getRequest.onerror = () => reject(getRequest.error)
+      getRequest.onsuccess = () => {
+        const set = getRequest.result
+        if (!set) {
+          reject(new Error('Word set not found'))
+          return
+        }
+        const updatedSet = { ...set, words: [...set.words, ...newWords] }
+        const putRequest = store?.put(updatedSet)
+        if (!putRequest) {
+          reject(new Error('Failed to create request'))
+          return
+        }
+        putRequest.onerror = () => reject(putRequest.error)
+        putRequest.onsuccess = () => resolve(updatedSet)
+      }
+    })
+  }
+
   async deleteWordSet(id: string) {
     if (!this.db) await this.init()
 

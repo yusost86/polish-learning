@@ -61,6 +61,12 @@ export default function App() {
     return id
   }
 
+  const handleAddWordsToSet = async (setId: string, words: Array<WordModel>) => {
+    await storage.addWordsToSet(setId, words)
+    await loadWordSets()
+    await ensureProgressRecordsForSet(setId, words)
+  }
+
   const handleProgressUpdate = async (setId: string, word: WordModel, correct: boolean) => {
     const wordKey = makeWordKey(setId, word)
     let record = await storage.getWordProgress(wordKey)
@@ -112,6 +118,7 @@ export default function App() {
             onShowStats={handleShowStats}
             onShowWords={handleShowWords}
             onAddSet={handleAddSet}
+            onAddWordsToSet={handleAddWordsToSet}
           />
         }
       />

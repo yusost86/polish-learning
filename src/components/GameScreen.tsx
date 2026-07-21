@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { shuffle, generateOptions, WordModel } from '../utils'
+import { shuffle, generateOptions, pickRandomDirection, getQuestionField, getAnswerField, Direction, WordModel } from '../utils'
 
 
 interface GameScreenProps {
@@ -14,6 +14,7 @@ export default function GameScreen({ words, setName, setId, onProgressUpdate, on
   const [deck, setDeck] = useState([] as WordModel[])
   const [index, setIndex] = useState(0)
   const [options, setOptions] = useState([] as WordModel[])
+  const [direction, setDirection] = useState('pl-uk' as Direction)
   const [selected, setSelected] = useState(null as WordModel | null)
   const [score, setScore] = useState(0)
   const [finished, setFinished] = useState(false)
@@ -30,14 +31,16 @@ export default function GameScreen({ words, setName, setId, onProgressUpdate, on
     }
 
     const d = shuffle(words).slice(0, ROUND)
+    const dir = pickRandomDirection()
     setDeck(d)
+    setDirection(dir)
     setIndex(0)
     setScore(0)
     setStreak(0)
     setFinished(false)
     setSelected(null)
     setAnswered(false)
-    setOptions(generateOptions(d[0], words))
+    setOptions(generateOptions(d[0], words, dir))
   }, [words, ROUND])
 
   useEffect(() => {
@@ -48,7 +51,8 @@ export default function GameScreen({ words, setName, setId, onProgressUpdate, on
     if (answered) return
     setSelected(opt)
     setAnswered(true)
-    const correct = opt.uk === deck[index].uk
+    const answerField = getAnswerField(direction)
+    const correct = opt[answerField] === deck[index][answerField]
     if (onProgressUpdate) {
       onProgressUpdate(setId, deck[index], correct)
     }
@@ -70,8 +74,10 @@ export default function GameScreen({ words, setName, setId, onProgressUpdate, on
     if (next >= ROUND) {
       setFinished(true)
     } else {
+      const dir = pickRandomDirection()
       setIndex(next)
-      setOptions(generateOptions(deck[next], words))
+      setDirection(dir)
+      setOptions(generateOptions(deck[next], words, dir))
       setSelected(null)
       setAnswered(false)
     }
@@ -81,16 +87,17 @@ export default function GameScreen({ words, setName, setId, onProgressUpdate, on
 
   const buttonStyle = (opt: WordModel) => {
     const current = deck[index]
+    const answerField = getAnswerField(direction)
     let bg = 'rgba(255,255,255,0.06)'
     let border = '1px solid rgba(255,255,255,0.1)'
     let color = '#fff'
 
     if (answered) {
-      if (opt.uk === current.uk) {
+      if (opt[answerField] === current[answerField]) {
         bg = 'rgba(72,199,142,0.2)'
         border = '1px solid #48c78e'
         color = '#48c78e'
-      } else if (selected?.uk === opt.uk) {
+      } else if (selected?.[answerField] === opt[answerField]) {
         bg = 'rgba(241,70,104,0.2)'
         border = '1px solid #f14668'
         color = '#f14668'
@@ -151,38 +158,43 @@ export default function GameScreen({ words, setName, setId, onProgressUpdate, on
   if (!deck.length) return null
 
   const current = deck[index]
+  const questionField = getQuestionField(direction)
+  const answerField = getAnswerField(direction)
+  const directionLabel = direction === 'pl-uk' ? 'ПЛ → УКР' : 'УКР → ПЛ'
+  const questionLangLabel = direction === 'pl-uk' ? 'Польське слово' : 'Українське слово'
+  const questionPrompt = direction === 'pl-uk' ? 'Оберіть переклад українською:' : 'Оберіть переклад польською:'
 
   return (
     <div style={styles.app}>
       <div style={styles.card}>
         <div style={styles.setTitle as any}>Набір: "{setName}"</div>
         <div style={styles.header}>
-          <span style={styles.title}>ПЛ → УКР</span>
+          <span style={styles.title}>{directionLabel}</span>
           <span style={styles.scoreBar as any}>✓ {score} / {index} ({ROUND - index} лишилось)</span>
         </div>
 
         <div style={styles.progress}><div style={styles.progressFill} /></div>
 
         <div style={styles.wordBox as any}>
-          <span style={styles.langLabel}>Польське слово</span>
-          <div style={styles.word}>{current.pl}</div>
+          <span style={styles.langLabel}>{questionLangLabel}</span>
+          <div style={styles.word}>{current[questionField]}</div>
         </div>
 
-        <div style={styles.question as any}>Оберіть переклад українською:</div>
+        <div style={styles.question as any}>{questionPrompt}</div>
 
         <div style={styles.options}>
           {options.map((opt) => (
-            <button key={opt.uk} style={buttonStyle(opt) as any} onClick={() => handleAnswer(opt)}>
-              {opt.uk}
+            <button key={`${opt.pl}-${opt.uk}`} style={buttonStyle(opt) as any} onClick={() => handleAnswer(opt)}>
+              {opt[answerField]}
             </button>
           ))}
         </div>
 
         <div style={styles.streak as any}>
-          {answered && selected?.uk === current.uk && streak > 1
+          {answered && selected?.[answerField] === current[answerField] && streak > 1
             ? `🔥 Серія: ${streak}!`
-            : answered && selected?.uk !== current.uk
-            ? `Правильно: «${current.uk}»`
+            : answered && selected?.[answerField] !== current[answerField]
+            ? `Правильно: «${current[answerField]}»`
             : ''}
         </div>
 
@@ -192,4 +204,4 @@ export default function GameScreen({ words, setName, setId, onProgressUpdate, on
       </div>
     </div>
   )
-}
+} 

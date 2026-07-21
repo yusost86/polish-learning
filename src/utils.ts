@@ -3,8 +3,20 @@ export const DEFAULT_WORDS: Array<WordModel> = [
 ]
 
 export const shuffle = (arr: Array<WordModel>) => [...arr].sort(() => Math.random() - 0.5)
-export const generateOptions = (correct: WordModel, all: Array<WordModel>) => {
-  const wrong = shuffle(all.filter((w) => w.uk !== correct.uk)).slice(0, 3)
+
+// Direction of translation for a single game question:
+// 'pl-uk' = show Polish word, pick Ukrainian answer
+// 'uk-pl' = show Ukrainian word, pick Polish answer
+export type Direction = 'pl-uk' | 'uk-pl'
+
+export const pickRandomDirection = (): Direction => (Math.random() < 0.5 ? 'pl-uk' : 'uk-pl')
+
+export const getQuestionField = (direction: Direction): 'pl' | 'uk' => (direction === 'pl-uk' ? 'pl' : 'uk')
+export const getAnswerField = (direction: Direction): 'pl' | 'uk' => (direction === 'pl-uk' ? 'uk' : 'pl')
+
+export const generateOptions = (correct: WordModel, all: Array<WordModel>, direction: Direction = 'pl-uk') => {
+  const answerField = getAnswerField(direction)
+  const wrong = shuffle(all.filter((w) => w[answerField] !== correct[answerField])).slice(0, 3)
   return shuffle([correct, ...wrong])
 }
 
@@ -24,9 +36,19 @@ export interface WordSetModel {
 }
 export interface WordModel {
   pl: string,
-  uk: string
+  uk: string,
+  topic?: string
 }
 export const makeWordKey = (setId: string, word: WordModel) => `${setId}|${word.pl}|${word.uk}`
+
+// Returns the sorted list of unique, non-empty topics found among a list of words.
+export const getUniqueTopics = (words: Array<WordModel>): string[] => {
+  const topics = new Set<string>()
+  words.forEach((w) => {
+    if (w.topic && w.topic.trim()) topics.add(w.topic.trim())
+  })
+  return Array.from(topics).sort((a, b) => a.localeCompare(b, 'uk'))
+}
 
 export const formatDate = (isoString: string | null | undefined) => {
   if (!isoString) return '—'
@@ -45,6 +67,7 @@ export const createBaseWordProgress = (setId: string, word: WordModel): WordProg
     wordKey: makeWordKey(setId, word),
     setId,
     word,
+    topic: word.topic || null,
     addedAt: now,
     status: 'not learned',
     correctCount: 0,
@@ -70,6 +93,7 @@ export interface WordProgressRecord {
   wordKey: string,
   setId: string,
   word: WordModel,
+  topic?: string | null,
   addedAt: string,
   status: 'not learned' | 'learned',
   lastReviewAt: string | null,
@@ -88,6 +112,15 @@ export interface WordProgressRecord {
     attempts: number,
     accuracy: number,
   }>
+}
+
+// Stage 1: word has never been answered yet.
+export const isNewWord = (record: WordProgressRecord) => (record.attempts || 0) === 0
+
+// Stage 2: word was already seen at least once and its scheduled review date has arrived.
+export const isDueForReview = (record: WordProgressRecord) => {
+  if ((record.attempts || 0) === 0) return false
+  return new Date(record.nextReviewAt).getTime() <= Date.now()
 }
 
 export const updateWordProgressRecord = (record: WordProgressRecord, correct: boolean): WordProgressRecord => {
