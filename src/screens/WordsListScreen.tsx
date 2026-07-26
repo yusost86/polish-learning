@@ -2,8 +2,6 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useAppData } from '../hooks/useAppData'
-import { starLevel } from '../learning/progress'
-
 type SortKey = 'dateAsc' | 'dateDesc' | 'nameAsc' | 'nameDesc' | 'levelDesc' | 'levelAsc'
 
 export default function WordsListScreen() {
@@ -25,9 +23,9 @@ export default function WordsListScreen() {
         case 'nameDesc':
           return b.word.foreignText.localeCompare(a.word.foreignText, 'pl')
         case 'levelDesc':
-          return starLevel(b.studentWord) - starLevel(a.studentWord)
+          return (b.studentWord?.learningProgress?.mastery ?? 0) - (a.studentWord?.learningProgress?.mastery ?? 0)
         case 'levelAsc':
-          return starLevel(a.studentWord) - starLevel(b.studentWord)
+          return (a.studentWord?.learningProgress?.mastery ?? 0) - (b.studentWord?.learningProgress?.mastery ?? 0)
         case 'dateAsc':
           return a.word.createdAt.localeCompare(b.word.createdAt)
         case 'dateDesc':
@@ -71,7 +69,7 @@ export default function WordsListScreen() {
 
       <div style={{ display: 'flex', fontSize: 11, color: 'var(--text-faint)', padding: '0 4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         <div style={{ flex: 2 }}>🇵🇱 Слово</div>
-        <div style={{ flex: 1 }}>Рівень</div>
+        <div style={{ flex: 1 }}>Mastery</div>
         <div style={{ flex: 1.4, textAlign: 'right' }}>Наступне повторення</div>
       </div>
 
@@ -80,8 +78,8 @@ export default function WordsListScreen() {
         {!loading && rows.length === 0 && <div style={{ color: 'var(--text-faint)' }}>Нічого не знайдено.</div>}
 
         {rows.map((r) => {
-          const level = starLevel(r.studentWord)
-          const due = r.studentWord ? new Date(r.studentWord.fsrsCard.due) : undefined
+          const mastery = r.studentWord?.learningProgress?.mastery ?? 0
+          const due = r.studentWord ? new Date(r.studentWord.learningProgress?.nextReviewAt ?? r.studentWord.fsrsCard.due) : undefined
           return (
             <button
               key={r.word.id}
@@ -105,7 +103,7 @@ export default function WordsListScreen() {
                   {r.word.nativeText}
                 </div>
               </div>
-              <div style={{ flex: 1, fontSize: 13 }}>{level === 0 ? '🆕' : '⭐'.repeat(level)}</div>
+              <div style={{ flex: 1, fontSize: 13 }}>{r.studentWord ? `${Math.round(mastery * 100)}%` : '🆕'}</div>
               <div className="mono" style={{ flex: 1.4, textAlign: 'right', fontSize: 11, color: 'var(--text-faint)' }}>
                 {due ? formatRelative(due) : '—'}
               </div>

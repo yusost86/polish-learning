@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useAppData } from '../hooks/useAppData'
-import { getReviewEventsForWord, starLevel } from '../learning/progress'
+import { getReviewEventsForWord } from '../learning/progress'
 
 import type { ReviewEvent } from '../domain/types'
 
@@ -29,7 +29,7 @@ export default function WordDetailScreen() {
   }
 
   const { word, studentWord, topicName } = record
-  const level = starLevel(studentWord)
+  const learning = studentWord?.learningProgress
   const accuracy =
     studentWord && studentWord.correctCount + studentWord.incorrectCount > 0
       ? Math.round((studentWord.correctCount / (studentWord.correctCount + studentWord.incorrectCount)) * 100)
@@ -63,14 +63,21 @@ export default function WordDetailScreen() {
 
       <section style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-l)', padding: '16px 18px' }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gold)', marginBottom: 10 }}>Статистика по слову</div>
-        <Row label="Рівень" value={level === 0 ? 'Нове' : '⭐'.repeat(level)} />
+        <Row label="Стан" value={learning ? stateLabel(learning.state) : 'Нове'} />
+        <Row label="Mastery" value={`${Math.round((learning?.mastery ?? 0) * 100)}%`} />
+        {learning && <>
+          <Row label="Розпізнавання" value={`${Math.round(learning.skills.recognition * 100)}%`} />
+          <Row label="Відтворення" value={`${Math.round(learning.skills.recall * 100)}%`} />
+          <Row label="Написання" value={`${Math.round(learning.skills.production * 100)}%`} />
+          <Row label="Контекст" value={`${Math.round(learning.skills.context * 100)}%`} />
+        </>}
         <Row label="Правильних" value={studentWord?.correctCount ?? 0} />
         <Row label="Неправильних" value={studentWord?.incorrectCount ?? 0} />
         {accuracy !== null && <Row label="Точність" value={`${accuracy}%`} />}
         <Row label="Поточний streak" value={studentWord?.consecutiveCorrect ?? 0} />
         <Row
           label="Наступне повторення"
-          value={studentWord ? new Date(studentWord.fsrsCard.due).toLocaleString('uk-UA') : '—'}
+          value={studentWord ? new Date(learning?.nextReviewAt ?? studentWord.fsrsCard.due).toLocaleString('uk-UA') : '—'}
         />
       </section>
 
@@ -88,6 +95,10 @@ export default function WordDetailScreen() {
       </section>
     </div>
   )
+}
+
+function stateLabel(state: NonNullable<import('../domain/types').StudentWord['learningProgress']>['state']): string {
+  return { new: 'Нове', introduced: 'Ознайомлене', learning: 'У навчанні', consolidating: 'Закріплюється', mature: 'Засвоєне' }[state]
 }
 
 function BackHeader({ onBack }: { onBack: () => void }) {

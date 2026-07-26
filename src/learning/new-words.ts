@@ -27,7 +27,7 @@ export async function addNewWords(
   if (subtopicId) {
     words = words.filter((word) => word.subtopicId === subtopicId);
   } else if (topicId) {
-    words = words.filter((word) => word.topicId === topicId);
+    words = words.filter((word) => word.topicId === topicId || word.topicIds?.includes(topicId) === true);
   }
 
   words = words.sort((a, b) => b.importance - a.importance).slice(0, limit);

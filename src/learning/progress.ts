@@ -27,6 +27,8 @@ export async function loadProgressRecords(studentId: string): Promise<WordProgre
  * and its retrievability/stability is comfortably high. */
 export function isLearned(sw: StudentWord | undefined): boolean {
   if (!sw) return false;
+  if (sw.learningProgress) return sw.learningProgress.state === "mature";
+  // Compatibility for records created before the mastery model.
   return sw.fsrsCard.state === State.Review && sw.fsrsCard.stability >= 21;
 }
 
@@ -37,17 +39,18 @@ export function isInProgress(sw: StudentWord | undefined): boolean {
 
 export function isDue(sw: StudentWord | undefined, now: Date = new Date()): boolean {
   if (!sw) return false;
-  return new Date(sw.fsrsCard.due) <= now;
+  return new Date(sw.learningProgress?.nextReviewAt ?? sw.fsrsCard.due) <= now;
 }
 
 export function computeGlobalSummary(records: WordProgressRecord[]): GlobalProgressSummary {
   const totalUniqueWords = records.length;
   const learnedWordsCount = records.filter((r) => isLearned(r.studentWord)).length;
-  const newWordsCount = records.filter((r) => !r.studentWord).length;
+  const newWordsCount = records.filter((r) => !r.studentWord || r.studentWord.learningProgress?.state === "new").length;
   const dueNowCount = records.filter((r) => isDue(r.studentWord)).length;
 
   return { totalUniqueWords, newWordsCount, learnedWordsCount, dueNowCount };
 }
+
 
 /** Star rating 1-5 derived from FSRS stability (days), used for a quick visual cue. */
 export function starLevel(sw: StudentWord | undefined): number {

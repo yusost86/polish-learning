@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { useAppData } from '../hooks/useAppData'
 import { LOCAL_STUDENT_ID } from '../db/db'
-import { computeAccuracyStats, starLevel, type AccuracyStats } from '../learning/progress'
+import { computeAccuracyStats, type AccuracyStats } from '../learning/progress'
 
 export default function StatisticsScreen() {
   const navigate = useNavigate()
@@ -14,10 +14,14 @@ export default function StatisticsScreen() {
     computeAccuracyStats(LOCAL_STUDENT_ID).then(setAccuracy)
   }, [progressRecords])
 
-  const starCounts = [0, 0, 0, 0, 0, 0]
-  for (const r of progressRecords) {
-    starCounts[starLevel(r.studentWord)] += 1
-  }
+  const learningCards = progressRecords
+    .map((r) => r.studentWord?.learningProgress)
+    .filter((progress): progress is NonNullable<typeof progress> => progress !== undefined)
+  const stateCounts = { new: 0, introduced: 0, learning: 0, consolidating: 0, mature: 0 }
+  for (const progress of learningCards) stateCounts[progress.state] += 1
+  const averageMastery = learningCards.length
+    ? Math.round((learningCards.reduce((sum, progress) => sum + progress.mastery, 0) / learningCards.length) * 100)
+    : 0
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -44,18 +48,16 @@ export default function StatisticsScreen() {
         </Card>
       )}
 
-      <Card title="⭐ Рівні слів">
-        {[5, 4, 3, 2, 1, 0].map((lvl) => (
-          <Row key={lvl} label={starLabel(lvl)} value={starCounts[lvl]} />
-        ))}
+      <Card title="🧠 Mastery">
+        <Row label="Середній рівень засвоєння" value={`${averageMastery}%`} />
+        <Row label="Нові" value={stateCounts.new} />
+        <Row label="Ознайомлені" value={stateCounts.introduced} />
+        <Row label="У навчанні" value={stateCounts.learning} />
+        <Row label="Закріплюються" value={stateCounts.consolidating} />
+        <Row label="Засвоєні" value={stateCounts.mature} />
       </Card>
     </div>
   )
-}
-
-function starLabel(level: number): string {
-  if (level === 0) return 'Нові'
-  return '⭐'.repeat(level)
 }
 
 function Header({ title, onBack }: { title: string; onBack: () => void }) {

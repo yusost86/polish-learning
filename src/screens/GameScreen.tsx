@@ -1,13 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Rating, type Grade } from 'ts-fsrs'
 
 import { db, LOCAL_STUDENT_ID } from '../db/db'
 import { buildSession } from '../learning/session'
 import { useLearningSession } from '../hooks/useLearningSession'
 import { useAppData } from '../hooks/useAppData'
+import { maskWord, normalizeAnswer } from '../learning/exercise-plan'
+import { selectExercise } from '../features/learning/exercises/exerciseSelector'
 
 import type { ExerciseType, StudentWord, Word } from '../domain/types'
+import type { ExerciseType as LearningExerciseType, WordLearningStats } from '../features/learning/types'
+import { DifficultyBadge } from './components/DifficultyBadge'
+import { MultipleChoiceExercise } from './components/MultipleChoiceExercise'
+import { TypeInExercise } from './components/TypeInExercise'
+import { Centered } from './components/Centered'
+import { BackButton } from './components/BackButton'
 
 interface GameLocationState {
   topicId?: string
@@ -15,12 +22,40 @@ interface GameLocationState {
   mode?: 'due' | 'new' | 'mixed'
 }
 
-const GRADE_BUTTONS: { grade: Grade; label: string; sub: string; color: string }[] = [
-  { grade: Rating.Again, label: 'Ще раз', sub: '<1хв', color: 'var(--bad)' },
-  { grade: Rating.Hard, label: 'Важко', sub: '~1д', color: '#d9a86c' },
-  { grade: Rating.Good, label: 'Добре', sub: '~3д', color: 'var(--good)' },
-  { grade: Rating.Easy, label: 'Легко', sub: '~7д', color: 'var(--blue)' },
-]
+export type InteractionKind = 'MULTIPLE_CHOICE' | 'FILL_BLANK' | 'TYPE_IN'
+
+function shuffled<T>(arr: T[]): T[] {
+  const copy = [...arr]
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[copy[i], copy[j]] = [copy[j], copy[i]]
+  }
+  return copy
+}
+
+function toLearningWord(word: Word) {
+  return { id: word.id, term: word.foreignText, translation: word.nativeText, topicId: word.topicId, subtopicId: word.subtopicId, priority: word.importance }
+}
+
+function toLearningStats(card: StudentWord, word: Word): WordLearningStats {
+  const progress = card.learningProgress ?? {
+    skills: { recognition: 0, recall: 0, production: 0, context: 0 }, mastery: 0, weakestSkill: 'recognition' as const,
+    state: 'new' as const, attempts: 0, correctAnswers: 0, wrongAnswers: 0, correctStreak: 0, averageResponseTimeMs: 0,
+  }
+  const createdAt = new Date(card.createdAt)
+  const updatedAt = new Date(card.updatedAt)
+  return {
+    wordId: card.wordId, studentId: card.studentId, topicId: word.topicId, subtopicId: word.subtopicId,
+    state: progress.state, skills: progress.skills, mastery: progress.mastery, weakestSkill: progress.weakestSkill,
+    attempts: progress.attempts, correctAnswers: progress.correctAnswers, wrongAnswers: progress.wrongAnswers,
+    correctStreak: progress.correctStreak, averageResponseTimeMs: progress.averageResponseTimeMs,
+    lastExerciseType: progress.lastExerciseType, lastCorrect: progress.lastCorrect, fsrsCard: card.fsrsCard,
+    lastReviewedAt: progress.lastReviewedAt ? new Date(progress.lastReviewedAt) : undefined,
+    nextReviewAt: progress.nextReviewAt ? new Date(progress.nextReviewAt) : card.fsrsCard.due,
+    createdAt: Number.isNaN(createdAt.getTime()) ? new Date() : createdAt,
+    updatedAt: Number.isNaN(updatedAt.getTime()) ? new Date() : updatedAt,
+  }
+}
 
 /**
  * Loader shell: fetches the session's cards + words once, then hands off to
@@ -39,6 +74,8 @@ export default function GameScreen() {
   const [loading, setLoading] = useState(true)
   const [initialCards, setInitialCards] = useState<StudentWord[]>([])
   const [wordsMap, setWordsMap] = useState<Record<string, Word>>({})
+  const [distractorPool, setDistractorPool] = useState<Word[]>([])
+  const [aheadOfSchedule, setAheadOfSchedule] = useState(false)
   const startedRef = useRef(false)
 
   useEffect(() => {
@@ -55,7 +92,7 @@ export default function GameScreen() {
 
       const allCards = [...session.reviewCards, ...session.newCards]
       const wordIds = Array.from(new Set(allCards.map((c) => c.wordId)))
-      const words = await db.words.bulkGet(wordIds)
+      const [words, allWords] = await Promise.all([db.words.bulkGet(wordIds), db.words.toArray()])
 
       const map: Record<string, Word> = {}
       words.forEach((w) => {
@@ -63,7 +100,9 @@ export default function GameScreen() {
       })
 
       setWordsMap(map)
+      setDistractorPool(allWords)
       setInitialCards(allCards)
+      setAheadOfSchedule(session.aheadOfSchedule)
       setLoading(false)
     })()
   }, [state.topicId, state.subtopicId, state.mode])
@@ -93,43 +132,137 @@ export default function GameScreen() {
     )
   }
 
-  return <GameSession initialCards={initialCards} wordsMap={wordsMap} onBackToMenu={handleBackToMenu} />
+  return (
+    <GameSession
+      initialCards={initialCards}
+      wordsMap={wordsMap}
+      distractorPool={distractorPool}
+      aheadOfSchedule={aheadOfSchedule}
+      onBackToMenu={handleBackToMenu}
+    />
+  )
 }
 
 function GameSession({
   initialCards,
   wordsMap,
+  distractorPool,
+  aheadOfSchedule,
   onBackToMenu,
 }: {
   initialCards: StudentWord[]
   wordsMap: Record<string, Word>
+  distractorPool: Word[]
+  aheadOfSchedule: boolean
   onBackToMenu: () => void
 }) {
   const { currentCard, answer, stats, isFinished } = useLearningSession(initialCards)
 
-  const [revealed, setRevealed] = useState(false)
   const [direction, setDirection] = useState<ExerciseType>('FOREIGN_TO_NATIVE')
+  const [kind, setKind] = useState<InteractionKind>('MULTIPLE_CHOICE')
+  const [learningExerciseType, setLearningExerciseType] = useState<LearningExerciseType>('recognition')
+  const [blanks, setBlanks] = useState(0)
+  const [selectedChoice, setSelectedChoice] = useState<string | null>(null)
+  const [typedValue, setTypedValue] = useState('')
+  const [typedSubmitted, setTypedSubmitted] = useState(false)
+  const [typedCorrect, setTypedCorrect] = useState(false)
 
   const currentWord = currentCard ? wordsMap[currentCard.wordId] : undefined
 
+  // Pick a fresh direction + difficulty tier whenever the card changes.
   useEffect(() => {
-    if (!currentCard) return
-    setRevealed(false)
-    const options = currentWord?.exerciseTypes.filter((t) => t === 'FOREIGN_TO_NATIVE' || t === 'NATIVE_TO_FOREIGN')
-    const pool = options && options.length ? options : ['FOREIGN_TO_NATIVE', 'NATIVE_TO_FOREIGN']
-    setDirection(pool[Math.floor(Math.random() * pool.length)] as ExerciseType)
-  }, [currentCard, currentWord])
+    if (!currentCard || !currentWord) return
 
-  const handleGrade = (grade: Grade) => {
-    if (!currentWord) return
-    const isCorrect = grade !== Rating.Again
-    answer(grade, direction, isCorrect)
-  }
+    setSelectedChoice(null)
+    setTypedValue('')
+    setTypedSubmitted(false)
+    setTypedCorrect(false)
+
+    const canDoMultipleChoice = currentWord.exerciseTypes.includes('MULTIPLE_CHOICE') && distractorPool.length >= 4
+    const exercise = selectExercise(toLearningWord(currentWord), toLearningStats(currentCard, currentWord))
+    setLearningExerciseType(exercise.type)
+
+    switch (exercise.variant) {
+      case 'multiple-choice':
+        setDirection('FOREIGN_TO_NATIVE')
+        setKind(canDoMultipleChoice ? 'MULTIPLE_CHOICE' : 'TYPE_IN')
+        setBlanks(0)
+        break
+      case 'reverse-multiple-choice':
+        setDirection('NATIVE_TO_FOREIGN')
+        setKind(canDoMultipleChoice ? 'MULTIPLE_CHOICE' : 'TYPE_IN')
+        setBlanks(0)
+        break
+      case 'sentence-completion':
+        setDirection('FOREIGN_TO_NATIVE')
+        setKind('FILL_BLANK')
+        setBlanks(Math.max(1, Math.ceil(currentWord.nativeText.length / 5)))
+        break
+      case 'translation':
+      case 'mixed-recall':
+      case 'typing':
+        setDirection('NATIVE_TO_FOREIGN')
+        setKind('TYPE_IN')
+        setBlanks(0)
+        break
+    }
+  }, [currentCard, currentWord, distractorPool])
+
+  const frontText = currentWord ? (direction === 'FOREIGN_TO_NATIVE' ? currentWord.foreignText : currentWord.nativeText) : ''
+  const backText = currentWord ? (direction === 'FOREIGN_TO_NATIVE' ? currentWord.nativeText : currentWord.foreignText) : ''
+  const frontLabel = direction === 'FOREIGN_TO_NATIVE' ? 'PL' : 'UK'
+  const edgeColor = direction === 'FOREIGN_TO_NATIVE' ? 'var(--gold)' : 'var(--blue)'
+
+  const maskedHint = useMemo(() => {
+    if (kind !== 'FILL_BLANK' || !backText) return undefined
+    return maskWord(backText, blanks)
+  }, [kind, backText, blanks])
+
+  const choiceOptions = useMemo(() => {
+    if (kind !== 'MULTIPLE_CHOICE' || !currentWord) return []
+
+    const getAnswerText = (w: Word) => (direction === 'FOREIGN_TO_NATIVE' ? w.nativeText : w.foreignText)
+    const correctText = getAnswerText(currentWord)
+
+    const others = distractorPool.filter((w) => w.id !== currentWord.id && getAnswerText(w) !== correctText)
+    const distractors = shuffled(others).slice(0, 3).map((w) => getAnswerText(w))
+
+    return shuffled([correctText, ...distractors])
+  }, [kind, currentWord, direction, distractorPool])
 
   const progressPct = useMemo(() => {
     if (stats.total === 0) return 0
     return Math.round((stats.answered / stats.total) * 100)
   }, [stats])
+
+  const handleChoice = (choice: string) => {
+    if (!currentWord || selectedChoice) return
+    setSelectedChoice(choice)
+    const isCorrect = choice === backText
+    window.setTimeout(() => {
+      answer({
+        word: currentWord,
+        learningExerciseType,
+        exerciseType: direction,
+        isCorrect,
+      })
+    }, 650)
+  }
+
+  const handleTypedSubmit = () => {
+    if (!currentWord || typedSubmitted || !typedValue.trim()) return
+    const isCorrect = normalizeAnswer(typedValue) === normalizeAnswer(backText)
+    setTypedSubmitted(true)
+    setTypedCorrect(isCorrect)
+    window.setTimeout(() => {
+      answer({
+        word: currentWord,
+        learningExerciseType,
+        exerciseType: direction,
+        isCorrect,
+      })
+    }, 900)
+  }
 
   if (isFinished || !currentCard || !currentWord) {
     return (
@@ -145,14 +278,8 @@ function GameSession({
     )
   }
 
-  const frontText = direction === 'FOREIGN_TO_NATIVE' ? currentWord.foreignText : currentWord.nativeText
-  const backText = direction === 'FOREIGN_TO_NATIVE' ? currentWord.nativeText : currentWord.foreignText
-  const frontLabel = direction === 'FOREIGN_TO_NATIVE' ? 'PL' : 'UK'
-  const backLabel = direction === 'FOREIGN_TO_NATIVE' ? 'UK' : 'PL'
-  const edgeColor = direction === 'FOREIGN_TO_NATIVE' ? 'var(--gold)' : 'var(--blue)'
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, flex: 1 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
       <header style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <button
           onClick={onBackToMenu}
@@ -171,136 +298,50 @@ function GameSession({
         </div>
       </header>
 
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', perspective: 1200 }}>
+      {aheadOfSchedule && (
         <div
-          onClick={() => !revealed && setRevealed(true)}
-          role="button"
-          tabIndex={0}
-          aria-label={revealed ? backText : 'Показати переклад'}
           style={{
-            width: '100%',
-            maxWidth: 340,
-            height: 260,
-            position: 'relative',
-            transformStyle: 'preserve-3d',
-            transition: 'transform 0.5s cubic-bezier(.2,.8,.2,1)',
-            transform: revealed ? 'rotateY(180deg)' : 'rotateY(0deg)',
-            cursor: revealed ? 'default' : 'pointer',
+            fontSize: 12,
+            color: 'var(--text-dim)',
+            background: 'var(--surface-alt)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-s)',
+            padding: '8px 12px',
           }}
         >
-          <FaceCard label={frontLabel} text={frontText} edgeColor={edgeColor} hint="Торкніться, щоб перевернути" style={{ backfaceVisibility: 'hidden' }} />
-          <FaceCard
-            label={backLabel}
-            text={backText}
-            edgeColor={edgeColor}
-            hint=""
-            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0 }}
-          />
+          ⏱ Нових слів і прострочених повторень поки немає — ось найближчі слова наперед графіка.
         </div>
-      </div>
+      )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, minHeight: 64 }}>
-        {revealed &&
-          GRADE_BUTTONS.map((b) => (
-            <button
-              key={b.label}
-              onClick={() => handleGrade(b.grade)}
-              style={{
-                padding: '12px 4px',
-                borderRadius: 'var(--radius-m)',
-                background: 'var(--surface)',
-                border: `1px solid ${b.color}`,
-                color: 'var(--text)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 4,
-              }}
-            >
-              <span style={{ fontWeight: 700, fontSize: 13, color: b.color }}>{b.label}</span>
-              <span className="mono" style={{ fontSize: 10, color: 'var(--text-faint)' }}>{b.sub}</span>
-            </button>
-          ))}
-        {!revealed && (
-          <button
-            onClick={() => setRevealed(true)}
-            style={{
-              gridColumn: '1 / -1',
-              padding: '15px',
-              borderRadius: 'var(--radius-m)',
-              background: 'var(--gold)',
-              color: '#2a1e0c',
-              fontWeight: 700,
-              fontSize: 15,
-            }}
-          >
-            Показати переклад
-          </button>
-        )}
-      </div>
+      <DifficultyBadge kind={kind} />
+
+      {kind === 'MULTIPLE_CHOICE' ? (
+        <MultipleChoiceExercise
+          promptLabel={frontLabel}
+          promptText={frontText}
+          edgeColor={edgeColor}
+          options={choiceOptions}
+          correctText={backText}
+          selected={selectedChoice}
+          onSelect={handleChoice}
+        />
+      ) : (
+        <TypeInExercise
+          key={currentCard.id}
+          promptLabel={frontLabel}
+          promptText={frontText}
+          edgeColor={edgeColor}
+          maskedHint={maskedHint}
+          correctText={backText}
+          value={typedValue}
+          onChange={setTypedValue}
+          submitted={typedSubmitted}
+          isCorrect={typedCorrect}
+          onSubmit={handleTypedSubmit}
+        />
+      )}
     </div>
   )
 }
 
-function FaceCard({
-  label,
-  text,
-  edgeColor,
-  hint,
-  style,
-}: {
-  label: string
-  text: string
-  edgeColor: string
-  hint: string
-  style?: React.CSSProperties
-}) {
-  return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        borderRadius: 'var(--radius-l)',
-        background: 'var(--surface)',
-        border: `2px solid ${edgeColor}`,
-        boxShadow: '0 20px 40px rgba(0,0,0,0.35)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 14,
-        padding: 24,
-        textAlign: 'center',
-        ...style,
-      }}
-    >
-      <span
-        className="mono"
-        style={{ fontSize: 12, fontWeight: 700, color: edgeColor, letterSpacing: '0.12em', textTransform: 'uppercase' }}
-      >
-        {label}
-      </span>
-      <span style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, lineHeight: 1.2 }}>{text}</span>
-      {hint && <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>{hint}</span>}
-    </div>
-  )
-}
 
-function Centered({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-      {children}
-    </div>
-  )
-}
-
-function BackButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{ padding: '13px 24px', borderRadius: 'var(--radius-m)', background: 'var(--gold)', color: '#2a1e0c', fontWeight: 700 }}
-    >
-      ← До меню
-    </button>
-  )
-}
