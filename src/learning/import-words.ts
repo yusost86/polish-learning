@@ -1,5 +1,5 @@
 import { db } from "../db/db";
-import type { Topic, Word, WordModelDTO } from "../domain/types";
+import type { PartOfSpeech, Topic, Word, WordModelDTO } from "../domain/types";
 
 export class ImportValidationError extends Error {}
 
@@ -7,7 +7,7 @@ export interface ImportEntry {
   topic: string;
   pl: string;
   ua: string;
-  partOfSpeech?: string;
+  partOfSpeech?: PartOfSpeech;
 }
 
 export interface ImportAnalysis {
@@ -27,7 +27,10 @@ export function parseWordModelJSON(raw: string): WordModelDTO[] {
 
 export function parseImportEntries(raw: string): ImportEntry[] {
   let value: unknown;
-  try { value = JSON.parse(raw); } catch { throw new ImportValidationError("Не вдалося розпізнати JSON. Перевірте синтаксис."); }
+  try { value = JSON.parse(raw); } catch(e) { 
+    
+    console.log(  "Error parsing JSON:", e  );
+    throw new ImportValidationError("Не вдалося розпізнати JSON. Перевірте синтаксис."); }
   return normalizeImport(value);
 }
 
@@ -63,7 +66,7 @@ function normalizeEntry(value: Record<string, unknown>, topic: string, position:
   if (typeof partOfSpeech !== "undefined" && (typeof partOfSpeech !== "string" || !partOfSpeech.trim())) {
     throw new ImportValidationError(`Поле частини мови в елементі №${position} має бути непорожнім текстом.`);
   }
-  return { topic: topic.trim() || "Без теми", pl: pl.trim(), ua: ua.trim(), partOfSpeech: partOfSpeech as string | undefined };
+  return { topic: topic.trim() || "Без теми", pl: pl.trim(), ua: ua.trim(), partOfSpeech: partOfSpeech as PartOfSpeech | undefined };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === "object" && value !== null; }

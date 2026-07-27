@@ -27,10 +27,10 @@ export default function WordsListScreen() {
         case 'levelAsc':
           return (a.studentWord?.learningProgress?.mastery ?? 0) - (b.studentWord?.learningProgress?.mastery ?? 0)
         case 'dateAsc':
-          return a.word.createdAt.localeCompare(b.word.createdAt)
+          return a.studentWord?.learningProgress?.nextReviewAt?.localeCompare(b.studentWord?.learningProgress?.nextReviewAt ?? '') ?? 1
         case 'dateDesc':
         default:
-          return b.word.createdAt.localeCompare(a.word.createdAt)
+          return b.studentWord?.learningProgress?.nextReviewAt?.localeCompare(a.studentWord?.learningProgress?.nextReviewAt ?? '') ?? 1
       }
     })
 
@@ -59,8 +59,8 @@ export default function WordsListScreen() {
       />
 
       <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} style={{ padding: '10px 12px', fontSize: 13 }}>
-        <option value="dateDesc">📅 По даті додавання (нові спочатку)</option>
-        <option value="dateAsc">📅 По даті додавання (старі спочатку)</option>
+        <option value="dateDesc">📅 По наступному повторенню (найближчі спочатку)</option>
+        <option value="dateAsc">📅 По наступному додавання (найдальші спочатку)</option>
         <option value="nameAsc">🔤 По імені (А-Я)</option>
         <option value="nameDesc">🔤 По імені (Я-А)</option>
         <option value="levelDesc">⭐ По рівню (спадання)</option>
@@ -117,9 +117,18 @@ export default function WordsListScreen() {
 
 function formatRelative(date: Date): string {
   const diffMs = date.getTime() - Date.now()
+  //потртібно огкруго
   const diffDays = Math.round(diffMs / 86400000)
-  if (diffDays <= 0) return 'зараз'
-  if (diffDays === 1) return 'завтра'
+  if (diffDays <= 0) {
+    if (diffMs < 0) return 'зараз';
+    //need round to minutes 
+    const minutes = Math.round(diffMs / 60000)
+    if (minutes < 60) return `через ${minutes} хв.`
+    const hours = Math.round(diffMs / 3600000)
+    if (hours < 24) return `через ${hours} год.`
+    return 'зараз'
+  }
+  else if (diffDays === 1) return 'завтра'
   if (diffDays < 30) return `через ${diffDays} дн.`
   return date.toLocaleDateString('uk-UA')
 }

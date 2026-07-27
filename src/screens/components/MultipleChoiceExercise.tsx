@@ -1,16 +1,46 @@
+import { useMemo, useState } from 'react';
+import { normalizeAnswer } from '../../learning/exercise-plan';
 import { PromptCard } from './PromptCard';
+import { ExerciseType, Word } from '../../domain/types';
+import { shuffled } from '../GameScreen';
 
-export function MultipleChoiceExercise({
-  promptLabel, promptText, edgeColor, options, correctText, selected, onSelect,
-}: {
+interface MultipleChoiceExerciseProps {
   promptLabel: string;
   promptText: string;
   edgeColor: string;
-  options: string[];
   correctText: string;
-  selected: string | null;
-  onSelect: (choice: string) => void;
-}) {
+  onSubmit: (isCorrect: boolean) => void;
+
+  currentWord: Word,
+  distractorPool:Array<Word>
+  direction:ExerciseType
+}
+export function MultipleChoiceExercise({
+  promptLabel, promptText, edgeColor, correctText, onSubmit, currentWord, distractorPool, direction
+}: MultipleChoiceExerciseProps) {
+
+  const [answer, setAnswer] = useState<string | null>(null);
+
+  const handleSubmit = () => {
+    setAnswer("");
+    const isCorrect = normalizeAnswer(answer || '') === normalizeAnswer(correctText);
+    onSubmit(isCorrect);
+  }
+
+  const selected = Boolean(answer);
+
+  const options = useMemo(() => {
+    if (!currentWord) return [];
+
+    const getAnswerText = (w: Word) => (direction === 'FOREIGN_TO_NATIVE' ? w.nativeText : w.foreignText);
+    const correctText = getAnswerText(currentWord);
+
+    const others = distractorPool.filter((w) => w.id !== currentWord.id && getAnswerText(w) !== correctText);
+    const distractors = shuffled(others).slice(0, 3).map((w) => getAnswerText(w));
+
+    return shuffled([correctText, ...distractors]);
+  }, [currentWord, direction, distractorPool]);
+
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -20,7 +50,7 @@ export function MultipleChoiceExercise({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {options.map((opt) => {
           const isCorrectOption = opt === correctText;
-          const isSelected = opt === selected;
+          const isSelected = opt === answer;
           let bg = 'var(--surface)';
           let border = 'var(--border)';
           let color = 'var(--text)';
@@ -40,8 +70,8 @@ export function MultipleChoiceExercise({
           return (
             <button
               key={opt}
-              onClick={() => onSelect(opt)}
-              disabled={!!selected}
+              onClick={() => setAnswer(opt)}
+              disabled={selected}
               style={{
                 padding: '15px 16px',
                 borderRadius: 'var(--radius-m)',
@@ -58,6 +88,24 @@ export function MultipleChoiceExercise({
           );
         })}
       </div>
+      {selected && (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
+            <button
+              style={{
+                padding: '15px 16px',
+                borderRadius: 'var(--radius-m)',
+                background: 'rgba(111,191,154,0.15)',
+                border: `1.5px solid 'var(--bad)`,
+                color: 'var(--bad)',
+                fontWeight: 600,
+                fontSize: 15,
+                textAlign: 'left',
+              }}
+              onClick={handleSubmit} >
+              {"  Далі"}
+            </button>
+          </div></>)}
     </div>
   );
 }

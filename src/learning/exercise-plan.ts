@@ -1,16 +1,5 @@
 // src/learning/exercise-plan.ts
-
-import { starLevel } from "./progress";
-
-import type { StudentWord, Word } from "../domain/types";
-
 export type InteractionKind = "MULTIPLE_CHOICE" | "FILL_BLANK" | "TYPE_IN";
-
-export interface ExercisePlan {
-  kind: InteractionKind;
-  /** number of letters hidden, only meaningful for FILL_BLANK */
-  blanks: number;
-}
 
 /**
  * Picks how hard the exercise should be for this card, based on how well the
@@ -24,33 +13,6 @@ export interface ExercisePlan {
  * chosen kind (e.g. not enough words in the dictionary for multiple choice,
  * or the word wasn't tagged for FILL_BLANK).
  */
-export function chooseExercisePlan(
-  studentWord: StudentWord,
-  word: Word,
-  canDoMultipleChoice: boolean,
-): ExercisePlan {
-  const level = starLevel(studentWord);
-
-  const wantsFillBlank = word.exerciseTypes.includes("FILL_BLANK");
-
-  let kind: InteractionKind;
-  if (level <= 1) {
-    kind = canDoMultipleChoice ? "MULTIPLE_CHOICE" : wantsFillBlank ? "FILL_BLANK" : "TYPE_IN";
-  } else if (level === 2) {
-    kind = wantsFillBlank ? "FILL_BLANK" : canDoMultipleChoice ? "MULTIPLE_CHOICE" : "TYPE_IN";
-  } else if (level === 3) {
-    kind = wantsFillBlank ? "FILL_BLANK" : "TYPE_IN";
-  } else {
-    kind = "TYPE_IN";
-  }
-
-  let blanks = 0;
-  if (kind === "FILL_BLANK") {
-    blanks = level === 2 ? 1 : 2 + Math.round(Math.random());
-  }
-
-  return { kind, blanks };
-}
 
 /**
  * Masks `blanks` distinct letters (never spaces) in `answer` with underscores,

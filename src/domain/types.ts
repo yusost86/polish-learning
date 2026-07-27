@@ -14,13 +14,6 @@ export interface Topic {
   name: string;
   createdAt: string;
 }
-
-export interface Subtopic {
-  id: string;
-  topicId: string;
-  name: string;
-}
-
 export interface Word {
   id: string;
 
@@ -30,7 +23,6 @@ export interface Word {
   topicId: string;
   /** A word may be shared by several topics; topicId remains the primary one. */
   topicIds?: string[];
-  subtopicId?: string;
 
   partOfSpeech?: string;
 
@@ -122,14 +114,25 @@ export interface WordProgressRecord {
   topicName?: string;
 }
 
+ export type PartOfSpeech =
+  | 'rzeczownik'
+  | 'czasownik'
+  | 'przymiotnik'
+  | 'przysłówek'
+  | 'zaimek'
+  | 'liczebnik'
+  | 'przyimek'
+  | 'spójnik'
+  | 'partykuła'
+  | 'wykrzyknik'
+
 // Shape of the JSON snippet a user pastes in to add vocabulary
 export interface WordModelDTO {
   pl: string;
   uk: string;
   topic?: string;
   ua?: string;
-  partOfSpeech?: string;
-  "частина_мови"?: string;
+  partOfSpeech?: PartOfSpeech;
 }
 
 export interface GlobalProgressSummary {

@@ -13,7 +13,6 @@ export interface NewWordsResult {
 export async function addNewWords(
   studentId: string,
   topicId?: string,
-  subtopicId?: string,
   limit: number = 10,
 ): Promise<NewWordsResult> {
   const existing = await db.studentWords.where("studentId").equals(studentId).toArray();
@@ -24,9 +23,7 @@ export async function addNewWords(
 
   words = words.filter((word) => !knownIds.has(word.id));
 
-  if (subtopicId) {
-    words = words.filter((word) => word.subtopicId === subtopicId);
-  } else if (topicId) {
+  if (topicId) {
     words = words.filter((word) => word.topicId === topicId || word.topicIds?.includes(topicId) === true);
   }
 

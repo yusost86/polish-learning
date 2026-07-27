@@ -32,16 +32,16 @@ export function isLearned(sw: StudentWord | undefined): boolean {
   return sw.fsrsCard.state === State.Review && sw.fsrsCard.stability >= 21;
 }
 
-export function isInProgress(sw: StudentWord | undefined): boolean {
-  if (!sw) return false;
-  return !isLearned(sw);
-}
 
 export function isDue(sw: StudentWord | undefined, now: Date = new Date()): boolean {
   if (!sw) return false;
   return new Date(sw.learningProgress?.nextReviewAt ?? sw.fsrsCard.due) <= now;
 }
 
+export function toRepeate(sw: StudentWord | undefined ): boolean {
+  if (!sw) return false;
+  return sw.learningProgress?.state !== 'mature' && sw.learningProgress?.state !== 'new'
+}
 export function computeGlobalSummary(records: WordProgressRecord[]): GlobalProgressSummary {
   const totalUniqueWords = records.length;
   const learnedWordsCount = records.filter((r) => isLearned(r.studentWord)).length;
@@ -94,22 +94,4 @@ export async function computeAccuracyStats(studentId: string): Promise<AccuracyS
 
 export async function getReviewEventsForWord(wordId: string): Promise<ReviewEvent[]> {
   return db.reviewEvents.where("wordId").equals(wordId).sortBy("timestamp");
-}
-
-export function activityByDay(events: ReviewEvent[], days = 14): { date: string; count: number }[] {
-  const now = new Date();
-  const buckets: Record<string, number> = {};
-
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    buckets[d.toISOString().slice(0, 10)] = 0;
-  }
-
-  for (const e of events) {
-    const key = e.timestamp.slice(0, 10);
-    if (key in buckets) buckets[key] += 1;
-  }
-
-  return Object.entries(buckets).map(([date, count]) => ({ date, count }));
 }

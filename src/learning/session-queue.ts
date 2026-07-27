@@ -18,10 +18,6 @@ export class SessionQueue {
     this.queue.splice(position, 0, card);
   }
 
-  add(card: StudentWord): void {
-    this.queue.push(card);
-  }
-
   get length(): number {
     return this.queue.length;
   }

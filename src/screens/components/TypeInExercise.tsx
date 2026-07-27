@@ -1,27 +1,35 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, FC, useState } from 'react';
 import { PromptCard } from './PromptCard';
-
-export function TypeInExercise({
-  promptLabel, promptText, edgeColor, maskedHint, correctText, value, onChange, submitted, isCorrect, onSubmit,
-}: {
+import { normalizeAnswer } from '../../learning/exercise-plan';
+interface TypeInExerciseProps {
   promptLabel: string;
   promptText: string;
   edgeColor: string;
   maskedHint?: string;
   correctText: string;
-  value: string;
-  onChange: (v: string) => void;
-  submitted: boolean;
-  isCorrect: boolean;
-  onSubmit: () => void;
-}) {
+  onSubmit: (isCorrect: boolean) => void;
+}
+const TypeInExercise: FC<TypeInExerciseProps> = ({
+  promptLabel, promptText, edgeColor, maskedHint, correctText, onSubmit,
+}: TypeInExerciseProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [value, setValue] = useState<string>('');
+
+  const [answer, setAnswer] = useState<string | null>(null);
+  const isCorrect = normalizeAnswer(answer || '') === normalizeAnswer(correctText);
+
+  const handleSubmit = () => {
+    setAnswer("");
+ setValue("");
+   onSubmit(isCorrect);
+  }
 
   useEffect(() => {
     const t = window.setTimeout(() => inputRef.current?.focus(), 350);
     return () => window.clearTimeout(t);
   }, []);
 
+  const submitted = Boolean(answer?.trim());
   const borderColor = submitted ? (isCorrect ? 'var(--good)' : 'var(--bad)') : 'var(--border)';
 
   return (
@@ -49,9 +57,9 @@ export function TypeInExercise({
           placeholder={maskedHint ? 'Впишіть повне слово…' : 'Впишіть переклад…'}
           value={value}
           disabled={submitted}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') onSubmit();
+            if (e.key === 'Enter') setAnswer(value);
           }}
           style={{
             width: '100%',
@@ -62,15 +70,30 @@ export function TypeInExercise({
             border: `1.5px solid ${borderColor}`,
           }} />
 
-        {submitted && !isCorrect && (
-          <div style={{ textAlign: 'center', fontSize: 14, color: 'var(--good)' }}>
-            Правильно: <strong>{correctText}</strong>
-          </div>
+        {submitted && (
+          <>
+            <div style={{ textAlign: 'center', fontSize: 14, color: 'var(--good)' }}>
+              {isCorrect ? '✅ Правильно!' : `❌ Неправильно. Правильна відповідь: ${correctText}`}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
+              <button
+                style={{
+                  padding: '15px',
+                  borderRadius: 'var(--radius-m)',
+                  background: value.trim() ? 'var(--gold)' : 'var(--surface-alt)',
+                  color: value.trim() ? '#2a1e0c' : 'var(--text-faint)',
+                  fontWeight: 700,
+                  fontSize: 15,
+                }}
+                onClick={handleSubmit}>
+                {"Далі"}
+              </button>
+            </div></>
         )}
 
         {!submitted && (
           <button
-            onClick={onSubmit}
+            onClick={() => setAnswer(value)}
             disabled={!value.trim()}
             style={{
               padding: '15px',
@@ -84,7 +107,11 @@ export function TypeInExercise({
             Перевірити
           </button>
         )}
+
+
       </div>
     </div>
   );
 }
+
+export default TypeInExercise

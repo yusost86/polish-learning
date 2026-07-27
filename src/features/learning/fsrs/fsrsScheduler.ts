@@ -1,4 +1,4 @@
-import { createEmptyCard, fsrs, type Card } from "ts-fsrs";
+import { fsrs, type Card } from "ts-fsrs";
 import { toFsrsRating } from "./fsrsAdapter";
 import type { FsrsGrade } from "../types";
 
@@ -8,8 +8,4 @@ export interface FsrsScheduleResult { card: Card; nextReviewAt: Date; grade: Fsr
 export function scheduleFsrsReview(card: Card, now: Date, grade: FsrsGrade): FsrsScheduleResult {
   const result = scheduler.next(card, now, toFsrsRating(grade));
   return { card: result.card, nextReviewAt: result.card.due, grade, intervalDays: (result.card.due.getTime() - now.getTime()) / 86_400_000 };
-}
-export function createFsrsState(): { fsrsCard: Card; nextReviewAt: Date } {
-  const card = createEmptyCard();
-  return { fsrsCard: card, nextReviewAt: card.due };
 }

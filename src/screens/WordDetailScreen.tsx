@@ -4,7 +4,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAppData } from '../hooks/useAppData'
 import { getReviewEventsForWord } from '../learning/progress'
 
-import type { ReviewEvent } from '../domain/types'
+import type {LearningWordState, ReviewEvent } from '../domain/types'
+import { MasteryInfo } from './components/MasteryInfo'
 
 export default function WordDetailScreen() {
   const { wordId } = useParams<{ wordId: string }>()
@@ -29,7 +30,7 @@ export default function WordDetailScreen() {
   }
 
   const { word, studentWord, topicName } = record
-  const learning = studentWord?.learningProgress
+ // const learning = studentWord?.learningProgress
   const accuracy =
     studentWord && studentWord.correctCount + studentWord.incorrectCount > 0
       ? Math.round((studentWord.correctCount / (studentWord.correctCount + studentWord.incorrectCount)) * 100)
@@ -61,25 +62,7 @@ export default function WordDetailScreen() {
         <div style={{ marginTop: 14, fontSize: 12, color: 'var(--text-faint)' }}>Тема: {topicName}</div>
       </section>
 
-      <section style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-l)', padding: '16px 18px' }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gold)', marginBottom: 10 }}>Статистика по слову</div>
-        <Row label="Стан" value={learning ? stateLabel(learning.state) : 'Нове'} />
-        <Row label="Mastery" value={`${Math.round((learning?.mastery ?? 0) * 100)}%`} />
-        {learning && <>
-          <Row label="Розпізнавання" value={`${Math.round(learning.skills.recognition * 100)}%`} />
-          <Row label="Відтворення" value={`${Math.round(learning.skills.recall * 100)}%`} />
-          <Row label="Написання" value={`${Math.round(learning.skills.production * 100)}%`} />
-          <Row label="Контекст" value={`${Math.round(learning.skills.context * 100)}%`} />
-        </>}
-        <Row label="Правильних" value={studentWord?.correctCount ?? 0} />
-        <Row label="Неправильних" value={studentWord?.incorrectCount ?? 0} />
-        {accuracy !== null && <Row label="Точність" value={`${accuracy}%`} />}
-        <Row label="Поточний streak" value={studentWord?.consecutiveCorrect ?? 0} />
-        <Row
-          label="Наступне повторення"
-          value={studentWord ? new Date(learning?.nextReviewAt ?? studentWord.fsrsCard.due).toLocaleString('uk-UA') : '—'}
-        />
-      </section>
+      <MasteryInfo studentWord={studentWord} accuracy={accuracy} />
 
       <section style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-l)', padding: '16px 18px' }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gold)', marginBottom: 10 }}>Історія повторень</div>
@@ -97,7 +80,7 @@ export default function WordDetailScreen() {
   )
 }
 
-function stateLabel(state: NonNullable<import('../domain/types').StudentWord['learningProgress']>['state']): string {
+export function stateLabel(state: LearningWordState): string {
   return { new: 'Нове', introduced: 'Ознайомлене', learning: 'У навчанні', consolidating: 'Закріплюється', mature: 'Засвоєне' }[state]
 }
 
@@ -116,7 +99,7 @@ function BackHeader({ onBack }: { onBack: () => void }) {
   )
 }
 
-function Row({ label, value }: { label: string; value: string | number }) {
+export function Row({ label, value }: { label: string; value: string | number }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 14 }}>
       <span style={{ color: 'var(--text-dim)' }}>{label}</span>

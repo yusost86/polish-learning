@@ -2,11 +2,10 @@
 
 import Dexie, { type Table } from "dexie";
 
-import type { Topic, Subtopic, Word, StudentWord, ReviewEvent } from "../domain/types";
+import type { Topic, Word, StudentWord, ReviewEvent } from "../domain/types";
 
 export class VocabularyDatabase extends Dexie {
   topics!: Table<Topic, string>;
-  subtopics!: Table<Subtopic, string>;
   words!: Table<Word, string>;
   studentWords!: Table<StudentWord, string>;
   reviewEvents!: Table<ReviewEvent, string>;

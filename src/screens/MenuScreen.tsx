@@ -18,12 +18,13 @@ export default function MenuScreen() {
   const [saving, setSaving] = useState(false)
 
   const topicStats = useMemo(() => {
-    const map = new Map<string, { total: number; learned: number; due: number }>()
+    const map = new Map<string, { total: number; learned: number; due: number, new: number }>()
     for (const r of progressRecords) {
-      const t = map.get(r.word.topicId) ?? { total: 0, learned: 0, due: 0 }
+      const t = map.get(r.word.topicId) ?? { total: 0, learned: 0, due: 0, new: 0 }
       t.total += 1
       if (isLearned(r.studentWord)) t.learned += 1
       if (isDue(r.studentWord)) t.due += 1
+      if (r.studentWord?.learningProgress?.state === 'new') t.new += 1
       map.set(r.word.topicId, t)
     }
     return map
@@ -132,7 +133,7 @@ export default function MenuScreen() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {topics.map((topic) => {
-            const stat = topicStats.get(topic.id) ?? { total: 0, learned: 0, due: 0 }
+            const stat = topicStats.get(topic.id) ?? { total: 0, learned: 0, due: 0, new: 0 }
             return (
               <div
                 key={topic.id}
@@ -151,14 +152,14 @@ export default function MenuScreen() {
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
+                    disabled={stat.total === 0}
                     onClick={() => navigate('/game', { state: { topicId: topic.id, mode: 'new' } })}
                     style={{ flex: 1, padding: '10px', borderRadius: 'var(--radius-s)', background: 'var(--gold)', color: '#2a1e0c', fontWeight: 700, fontSize: 13 }}
                   >
-                    Вивчити нові
+                    Вивчити нові {stat.due > 0 ? ` (${stat.new})` : ''}
                   </button>
                   <button
                     onClick={() => navigate('/game', { state: { topicId: topic.id, mode: 'due' } })}
-                    disabled={stat.due === 0}
                     style={{
                       flex: 1,
                       padding: '10px',
