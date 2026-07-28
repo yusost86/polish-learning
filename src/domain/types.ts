@@ -9,6 +9,9 @@ export type ExerciseType =
   | "FILL_BLANK"
   | "CONTEXT";
 
+
+export type LearningExerciseType = "recognition" | "recall" | "production" | "context";
+export type LearningWordState = "new" | "introduced" | "learning" | "consolidating" | "mature";
 export interface Topic {
   id: string;
   name: string;
@@ -60,9 +63,6 @@ export interface StudentWord {
   createdAt: string;
   updatedAt: string;
 }
-
-export type LearningExerciseType = "recognition" | "recall" | "production" | "context";
-export type LearningWordState = "new" | "introduced" | "learning" | "consolidating" | "mature";
 
 export interface LearningProgress {
   skills: Record<LearningExerciseType, number>;

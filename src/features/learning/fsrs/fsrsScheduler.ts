@@ -3,7 +3,7 @@ import { toFsrsRating } from "./fsrsAdapter";
 import type { FsrsGrade } from "../types";
 
 const scheduler = fsrs();
-export interface FsrsScheduleResult { card: Card; nextReviewAt: Date; grade: FsrsGrade; intervalDays: number; }
+interface FsrsScheduleResult { card: Card; nextReviewAt: Date; grade: FsrsGrade; intervalDays: number; }
 
 export function scheduleFsrsReview(card: Card, now: Date, grade: FsrsGrade): FsrsScheduleResult {
   const result = scheduler.next(card, now, toFsrsRating(grade));

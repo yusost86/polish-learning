@@ -6,7 +6,7 @@ import {
 } from "./masteryCalculator";
 import type { ExerciseType, WordLearningStats } from "../types";
 
-export interface ApplyAnswerInput {
+interface ApplyAnswerInput {
   exerciseType: ExerciseType;
   correct: boolean;
   responseTimeMs: number;

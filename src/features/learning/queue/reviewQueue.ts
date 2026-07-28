@@ -1,5 +1,4 @@
-import { selectExercise } from "../exercises/exerciseSelector";
-import type {WordModel, WordLearningStats } from "../types";
+import type { WordModel, WordLearningStats } from "../types";
 
 interface QueueItem {
   word: WordModel;
@@ -22,26 +21,21 @@ export function buildReviewQueue(
   statsMap: Map<string, WordLearningStats>,
   limit = 10,
 ): QueueItem[] {
- const prioritizedWords =   words
+  const prioritizedWords = words
     .flatMap((word) => {
       const stats = statsMap.get(word.id);
-      if (!stats)
-        return [];
-      
-      const exercise= selectExercise(word, stats);
-      const priority= calculatePriority(stats);
+      if (!stats) return [];
+
+      const priority = calculatePriority(stats);
       return [
-            {
-              word,
-              stats,
-              exercise: exercise,
-              priority: priority,
-            },
-          ]
-        
+        {
+          word,
+          priority: priority,
+        },
+      ];
     })
     .sort((a, b) => b.priority - a.priority)
     .slice(0, limit);
-    console.log(prioritizedWords);
-    return prioritizedWords;
+
+  return prioritizedWords;
 }

@@ -93,9 +93,8 @@ export function useLearningSession(initialCards: StudentWord[]) {
         previousStats.correctStreak,
       );
 
-      const result = submitLearningAnswer(
+      const updatedStats = submitLearningAnswer(
         {
-          word: toLearningWord(word),
           stats: previousStats,
           exerciseType: learningExerciseType,
           correct: isCorrect,
@@ -106,17 +105,17 @@ export function useLearningSession(initialCards: StudentWord[]) {
 
       const updatedCard: StudentWord = {
         ...currentCard,
-        fsrsCard: result.updatedStats.fsrsCard,
-        correctCount: result.updatedStats.correctAnswers,
-        incorrectCount: result.updatedStats.wrongAnswers,
-        consecutiveCorrect: result.updatedStats.correctStreak,
+        fsrsCard: updatedStats.fsrsCard,
+        correctCount: updatedStats.correctAnswers,
+        incorrectCount: updatedStats.wrongAnswers,
+        consecutiveCorrect: updatedStats.correctStreak,
         consecutiveIncorrect: isCorrect
           ? 0
           : currentCard.consecutiveIncorrect + 1,
-        averageResponseTimeMs: result.updatedStats.averageResponseTimeMs,
+        averageResponseTimeMs: updatedStats.averageResponseTimeMs,
         lastExerciseType: exerciseType,
-        learningProgress: toStoredProgress(result.updatedStats),
-        updatedAt: result.updatedStats.updatedAt.toISOString(),
+        learningProgress: toStoredProgress(updatedStats),
+        updatedAt: updatedStats.updatedAt.toISOString(),
       };
 
       await db.transaction("rw", db.studentWords, db.reviewEvents, async () => {

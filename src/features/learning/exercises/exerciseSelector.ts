@@ -6,15 +6,14 @@ import type {
   WordLearningStats,
 } from "../types";
 
-export function selectExerciseType(stats: WordLearningStats): ExerciseType {
+function selectExerciseType(stats: WordLearningStats): ExerciseType {
   if (stats.attempts === 0 || stats.skills.recognition < 0.75)
     return "recognition";
   if (stats.skills.recall < 0.7) return "recall";
   if (stats.skills.production < 0.7) return "production";
   if (stats.skills.context < 0.65) return "context";
   return "recall";
-}
-export function selectExerciseVariant(
+} function selectExerciseVariant(
   type: ExerciseType,
   stats?: WordLearningStats,
 ): ExerciseVariant {

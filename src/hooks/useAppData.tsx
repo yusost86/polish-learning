@@ -41,7 +41,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   }, [reloadTopics, reloadProgress]);
 
   useEffect(() => {
-    reloadAll();
+    const tt = async () => { await reloadAll() };
+
+    tt();
   }, [reloadAll]);
 
   const summary = useMemo(() => computeGlobalSummary(progressRecords), [progressRecords]);
