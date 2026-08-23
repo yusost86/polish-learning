@@ -7,7 +7,7 @@ import type { Word } from "../domain/models/Word";
 import type { WordProgress } from "../domain/models/WordProgress";
 import type { SessionMode } from "../domain/enums/SessionMode";
 import { ExerciseSelector } from "./ExerciseSelector";
-import { isDue, isNewCard, overdueDays } from "./FsrsService";
+import { isDue, isNewCard, isReviewDue, overdueDays } from "./FsrsService";
 import { calculateMastery, getSkillMasteries, getWeakestSkill, isCriticalWord } from "./MasteryService";
 import { calculatePriorityBreakdown } from "./PriorityService";
 import type { QueueCandidate } from "./queueTypes";
@@ -20,6 +20,11 @@ export interface BuildQueueParams {
   now: Date;
   includeCrossTopicMixed?: boolean;
   sessionMode?: SessionMode;
+  queueLimit?: number;
+}
+
+function resolveQueueLimit(limit?: number): number {
+  return limit ?? QUEUE_SLOTS.total;
 }
 
 function buildCandidates(
@@ -222,8 +227,9 @@ function fillRemaining(
 function toQueueItems(
   queue: { candidate: QueueCandidate; reason: SelectionReason }[],
   exerciseSelector: ExerciseSelector,
+  queueLimit: number,
 ): LearningQueueItem[] {
-  return queue.slice(0, QUEUE_SLOTS.total).map(({ candidate, reason }) => ({
+  return queue.slice(0, queueLimit).map(({ candidate, reason }) => ({
     word: candidate.word,
     exercise: exerciseSelector.select(candidate.progress),
     priority: candidate.priority.score,
@@ -236,16 +242,17 @@ function toQueueItems(
 function buildNewSessionQueue(
   topicCandidates: QueueCandidate[],
   exerciseSelector: ExerciseSelector,
+  queueLimit: number,
 ): LearningQueueItem[] {
   const allNew =
-    topicCandidates.length >= QUEUE_SLOTS.total &&
+    topicCandidates.length > 0 &&
     topicCandidates.every(
       (c) => c.progress.state === WordState.New && c.progress.totalAttempts === 0,
     );
 
   if (allNew) {
     return sortByPriorityDesc(topicCandidates)
-      .slice(0, QUEUE_SLOTS.total)
+      .slice(0, queueLimit)
       .map((candidate) => ({
         word: candidate.word,
         exercise: exerciseSelector.select(candidate.progress),
@@ -259,68 +266,52 @@ function buildNewSessionQueue(
   const used = new Set<string>();
   const queue: { candidate: QueueCandidate; reason: SelectionReason }[] = [];
 
-  for (const pick of pickNewOrLearning(topicCandidates, used, QUEUE_SLOTS.total)) {
+  for (const pick of pickNewOrLearning(topicCandidates, used, queueLimit)) {
     queue.push(pick);
   }
 
-  if (queue.length < QUEUE_SLOTS.total) {
+  if (queue.length < queueLimit) {
     const learningPool = topicCandidates.filter(
       (c) =>
         !used.has(c.word.id) &&
         (c.progress.state === WordState.New || c.progress.state === WordState.Learning),
     );
-    for (const candidate of fillRemaining(learningPool, used, QUEUE_SLOTS.total - queue.length)) {
+    for (const candidate of fillRemaining(learningPool, used, queueLimit - queue.length)) {
       queue.push({ candidate, reason: SelectionReason.Learning });
     }
   }
 
-  return toQueueItems(queue, exerciseSelector);
+  return toQueueItems(queue, exerciseSelector, queueLimit);
 }
 
 function buildDueSessionQueue(
-  params: BuildQueueParams,
   topicCandidates: QueueCandidate[],
-  mixedPool: QueueCandidate[],
   exerciseSelector: ExerciseSelector,
+  now: Date,
+  queueLimit: number,
 ): LearningQueueItem[] {
-  const { topicId, now, includeCrossTopicMixed = false } = params;
-  const reviewPool = topicCandidates.filter((c) => c.progress.state !== WordState.New);
-  const used = new Set<string>();
-  const queue: { candidate: QueueCandidate; reason: SelectionReason }[] = [];
+  const dueCandidates = topicCandidates
+    .filter(
+      (c) => c.progress.state !== WordState.New && isReviewDue(c.progress.fsrsCard, now),
+    )
+    .sort((a, b) => {
+      const overdueDiff =
+        overdueDays(b.progress.fsrsCard, now) - overdueDays(a.progress.fsrsCard, now);
+      if (overdueDiff !== 0) {
+        return overdueDiff;
+      }
+      return b.priority.score - a.priority.score;
+    });
 
-  for (const pick of pickCriticalWeak(reviewPool, used, QUEUE_SLOTS.critical)) {
-    queue.push(pick);
-  }
+  const queue = dueCandidates.slice(0, queueLimit).map((candidate) => ({
+    candidate,
+    reason:
+      overdueDays(candidate.progress.fsrsCard, now) >= 1
+        ? SelectionReason.Overdue
+        : SelectionReason.FsrsDue,
+  }));
 
-  const overdueCandidate = pickOverdue(reviewPool, used, now);
-  if (overdueCandidate) {
-    used.add(overdueCandidate.word.id);
-    queue.push({ candidate: overdueCandidate, reason: SelectionReason.Overdue });
-  }
-
-  for (const pick of pickDue(reviewPool, used, QUEUE_SLOTS.due, now, overdueCandidate !== null)) {
-    queue.push(pick);
-  }
-
-  for (const pick of pickWeakSkill(reviewPool, used, 3)) {
-    queue.push(pick);
-  }
-
-  for (const pick of pickMixedReview(mixedPool, used, QUEUE_SLOTS.mixed + QUEUE_SLOTS.newOrLearning, topicId, includeCrossTopicMixed)) {
-    if (pick.candidate.progress.state === WordState.New) {
-      continue;
-    }
-    used.add(pick.candidate.word.id);
-    queue.push(pick);
-  }
-
-  if (queue.length < QUEUE_SLOTS.total) {
-    for (const candidate of fillRemaining(reviewPool, used, QUEUE_SLOTS.total - queue.length)) {
-      queue.push({ candidate, reason: SelectionReason.FsrsDue });
-    }
-  }
-
-  return toQueueItems(queue, exerciseSelector);
+  return toQueueItems(queue, exerciseSelector, queueLimit);
 }
 
 export class ReviewQueueBuilder {
@@ -335,18 +326,21 @@ export class ReviewQueueBuilder {
       now,
       includeCrossTopicMixed = false,
       sessionMode,
+      queueLimit,
     } = params;
+
+    const limit = resolveQueueLimit(queueLimit);
 
     const topicCandidates = buildCandidates(topicWords, progressByWordId, now);
     const allCandidates = buildCandidates(allWords, progressByWordId, now);
     const mixedPool = includeCrossTopicMixed ? allCandidates : topicCandidates;
 
     if (sessionMode === "new") {
-      return buildNewSessionQueue(topicCandidates, this.exerciseSelector);
+      return buildNewSessionQueue(topicCandidates, this.exerciseSelector, limit);
     }
 
     if (sessionMode === "due") {
-      return buildDueSessionQueue(params, topicCandidates, mixedPool, this.exerciseSelector);
+      return buildDueSessionQueue(topicCandidates, this.exerciseSelector, now, limit);
     }
 
     const allNew =
@@ -357,7 +351,7 @@ export class ReviewQueueBuilder {
 
     if (allNew) {
       return sortByPriorityDesc(topicCandidates)
-        .slice(0, QUEUE_SLOTS.total)
+        .slice(0, limit)
         .map((candidate) => ({
           word: candidate.word,
           exercise: this.exerciseSelector.select(candidate.progress),
@@ -402,14 +396,14 @@ export class ReviewQueueBuilder {
       queue.push(pick);
     }
 
-    if (queue.length < QUEUE_SLOTS.total) {
-      for (const candidate of fillRemaining(topicCandidates, used, QUEUE_SLOTS.total - queue.length)) {
+    if (queue.length < limit) {
+      for (const candidate of fillRemaining(topicCandidates, used, limit - queue.length)) {
         used.add(candidate.word.id);
         queue.push({ candidate, reason: SelectionReason.Learning });
       }
     }
 
-    return queue.slice(0, QUEUE_SLOTS.total).map(({ candidate, reason }) => ({
+    return queue.slice(0, limit).map(({ candidate, reason }) => ({
       word: candidate.word,
       exercise: this.exerciseSelector.select(candidate.progress),
       priority: candidate.priority.score,

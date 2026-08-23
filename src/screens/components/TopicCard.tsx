@@ -54,7 +54,9 @@ export function TopicCard({ stat, onLearnNew, onReview, onOpenDetails }: TopicCa
           Вивчити нові{stat.new > 0 ? ` (${stat.new})` : ""}
         </button>
         <button
+          disabled={stat.due === 0}
           onClick={onReview}
+          aria-label={`Повторити: ${stat.name}`}
           style={{
             flex: 1,
             padding: "10px",
@@ -63,6 +65,7 @@ export function TopicCard({ stat, onLearnNew, onReview, onOpenDetails }: TopicCa
             color: stat.due === 0 ? "var(--text-faint)" : "#0d1c2b",
             fontWeight: 700,
             fontSize: 13,
+            cursor: stat.due === 0 ? "not-allowed" : "pointer",
           }}
         >
           Повторити{stat.due > 0 ? ` (${stat.due})` : ""}

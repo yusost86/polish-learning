@@ -1,29 +1,13 @@
 import { useNavigate } from "react-router-dom";
 
-import { getCatalogTopics, getTopicName } from "../data/wordCatalog";
+import { useMenuStats } from "./useMenuStats";
 import type { MenuSummary, TopicStatViewModel } from "../ui/viewModels/MenuViewModel";
-
-export const HARDCODED_MENU_SUMMARY: MenuSummary = {
-  totalUniqueWords: 120,
-  newWordsCount: 40,
-  learnedWordsCount: 65,
-  dueNowCount: 8,
-};
-
-function buildTopicStats(): TopicStatViewModel[] {
-  return getCatalogTopics().map(({ topicId, name, wordCount }) => ({
-    topicId,
-    name,
-    total: wordCount,
-    learned: 0,
-    due: 0,
-    new: wordCount,
-  }));
-}
 
 export interface UseMenuScreenResult {
   summary: MenuSummary;
   topicStats: TopicStatViewModel[];
+  loading: boolean;
+  error: string | null;
   appVersion: string;
   onRepeatDue: () => void;
   onLearnTopic: (topicId: string) => void;
@@ -31,14 +15,18 @@ export interface UseMenuScreenResult {
   onOpenTopic: (topicId: string) => void;
   onOpenStats: () => void;
   onOpenWords: () => void;
+  onRefresh: () => void;
 }
 
 export function useMenuScreen(): UseMenuScreenResult {
   const navigate = useNavigate();
+  const { summary, topicStats, loading, error, refresh } = useMenuStats();
 
   return {
-    summary: HARDCODED_MENU_SUMMARY,
-    topicStats: buildTopicStats(),
+    summary,
+    topicStats,
+    loading,
+    error,
     appVersion: import.meta.env.VITE_APP_VERSION || "0.1.0",
     onRepeatDue: () => navigate("/game?mode=due"),
     onLearnTopic: (topicId: string) => navigate(`/game/${topicId}?mode=new`),
@@ -46,7 +34,8 @@ export function useMenuScreen(): UseMenuScreenResult {
     onOpenTopic: (topicId: string) => navigate(`/topic/${topicId}`),
     onOpenStats: () => navigate("/stats"),
     onOpenWords: () => navigate("/words"),
+    onRefresh: refresh,
   };
 }
 
-export { getTopicName };
+export { getTopicName } from "../data/wordCatalog";

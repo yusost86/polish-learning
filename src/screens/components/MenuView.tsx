@@ -6,6 +6,8 @@ import { TopicCard } from "./TopicCard";
 interface MenuViewProps {
   summary: MenuSummary;
   topicStats: TopicStatViewModel[];
+  loading: boolean;
+  error: string | null;
   appVersion: string;
   onRepeatDue: () => void;
   onLearnTopic: (topicId: string) => void;
@@ -18,6 +20,8 @@ interface MenuViewProps {
 export function MenuView({
   summary,
   topicStats,
+  loading,
+  error,
   appVersion,
   onRepeatDue,
   onLearnTopic,
@@ -58,26 +62,36 @@ export function MenuView({
         <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", marginBottom: 12 }}>
           📦 Загальний словник
         </div>
-        <StatRow label="Унікальних слів" value={summary.totalUniqueWords} />
-        <StatRow label="Нових слів" value={summary.newWordsCount} />
-        <StatRow label="Вивчених слів" value={summary.learnedWordsCount} />
-        <StatRow label="Прогрес" value={`${progressPct}%`} />
-        {summary.dueNowCount > 0 && (
-          <button
-            onClick={onRepeatDue}
-            style={{
-              marginTop: 14,
-              width: "100%",
-              padding: "13px 16px",
-              borderRadius: "var(--radius-s)",
-              background: "var(--bad)",
-              color: "#241211",
-              fontWeight: 700,
-              fontSize: 15,
-            }}
-          >
-            🔴 Повторити {summary.dueNowCount} слів
-          </button>
+        {loading && (
+          <p style={{ margin: 0, color: "var(--text-dim)", fontSize: 14 }}>Завантаження…</p>
+        )}
+        {error && !loading && (
+          <p style={{ margin: 0, color: "var(--bad)", fontSize: 14 }}>{error}</p>
+        )}
+        {!loading && !error && (
+          <>
+            <StatRow label="Унікальних слів" value={summary.totalUniqueWords} />
+            <StatRow label="Нових слів" value={summary.newWordsCount} />
+            <StatRow label="Вивчених слів" value={summary.learnedWordsCount} />
+            <StatRow label="Прогрес" value={`${progressPct}%`} />
+            {summary.dueNowCount > 0 && (
+              <button
+                onClick={onRepeatDue}
+                style={{
+                  marginTop: 14,
+                  width: "100%",
+                  padding: "13px 16px",
+                  borderRadius: "var(--radius-s)",
+                  background: "var(--bad)",
+                  color: "#241211",
+                  fontWeight: 700,
+                  fontSize: 15,
+                }}
+              >
+                🔴 Повторити {summary.dueNowCount} слів
+              </button>
+            )}
+          </>
         )}
       </section>
 

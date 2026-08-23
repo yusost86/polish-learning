@@ -24,5 +24,6 @@ export interface TopicOverview {
   topicId: string;
   topicProgress: TopicProgress;
   upcomingTasks: LearningQueueItem[];
+  followingTasks: LearningQueueItem[];
   words: TopicWordOverview[];
 }

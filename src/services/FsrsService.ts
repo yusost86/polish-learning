@@ -54,6 +54,10 @@ export function isNewCard(card: Card): boolean {
   return card.state === State.New && card.reps === 0;
 }
 
+export function isReviewDue(card: Card, now: Date): boolean {
+  return isDue(card, now) && !isNewCard(card);
+}
+
 export function overdueDays(card: Card, now: Date): number {
   if (!isDue(card, now)) {
     return 0;

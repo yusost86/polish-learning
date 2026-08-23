@@ -4,10 +4,13 @@ import { SkillType } from "../domain/enums/SkillType";
 import type { AnswerInput } from "../domain/models/AnswerInput";
 import type { AnswerResult } from "../domain/models/AnswerResult";
 import type { LearningQueueItem } from "../domain/models/LearningQueueItem";
+import type { MenuStats } from "../domain/models/MenuStats";
 import type { TopicOverview, TopicWordOverview } from "../domain/models/TopicOverview";
+import type { WordImportResult } from "../domain/models/WordImport";
 import type { TopicProgress } from "../domain/models/TopicProgress";
 import { createEmptyWordProgress, type WordProgress } from "../domain/models/WordProgress";
-import { getCatalogTopics } from "../data/wordCatalog";
+import { getCachedTopics, setCatalogCache } from "../data/catalogProvider";
+import { QUEUE_SLOTS } from "../domain/constants";
 import type { Word } from "../domain/models/Word";
 import type { LearningDataRepository } from "../repositories/WordProgressRepository";
 import { FsrsService } from "./FsrsService";
@@ -25,6 +28,8 @@ import {
   type GetNextTasksInput,
 } from "./sessionQueueTypes";
 import { calculateTopicProgress } from "./TopicProgressService";
+import { calculateMenuStats } from "./MenuStatsService";
+import { importWordsJson, syncCatalogCache } from "./catalogSync";
 import { getUnlockedTopicWords } from "./WaveManager";
 
 function exerciseToSkill(exerciseType: ExerciseType): SkillType {
@@ -53,7 +58,7 @@ export class LearningEngine {
   }
 
   async getNextTasks(studentId: string, input?: GetNextTasksInput): Promise<LearningQueueItem[]> {
-    const { topicId, mode } = normalizeGetNextTasksInput(input);
+    const { topicId, mode, limit } = normalizeGetNextTasksInput(input);
     const { sessionWords, sessionTopicId, isGlobal } = await this.resolveSessionWords(studentId, topicId, mode);
     const allWords = await this.repository.getAllWords();
 
@@ -79,6 +84,7 @@ export class LearningEngine {
       now: this.now,
       includeCrossTopicMixed,
       sessionMode: mode,
+      queueLimit: limit,
     });
   }
 
@@ -113,7 +119,7 @@ export class LearningEngine {
       };
     }
 
-    const fallbackTopicId = getCatalogTopics()[0]?.topicId ?? "travel";
+    const fallbackTopicId = getCachedTopics()[0]?.topicId ?? "travel";
     const topicWords = await this.repository.getTopicWords(fallbackTopicId);
     const waveCount = await this.repository.getUnlockedWaveCount(studentId, fallbackTopicId);
     return {
@@ -177,11 +183,22 @@ export class LearningEngine {
     return calculateTopicProgress(this.repository, studentId, topicId, this.now);
   }
 
+  async getMenuStats(studentId: string): Promise<MenuStats> {
+    return calculateMenuStats(this.repository, studentId, this.now);
+  }
+
+  async importWords(json: string): Promise<WordImportResult> {
+    const result = await importWordsJson(this.repository, json);
+    await syncCatalogCache(this.repository, setCatalogCache);
+    return result;
+  }
+
   async getTopicOverview(studentId: string, topicId: string): Promise<TopicOverview> {
     const topicWords = await this.repository.getTopicWords(topicId);
     const waveCount = await this.repository.getUnlockedWaveCount(studentId, topicId);
     const unlockedWords = getUnlockedTopicWords(topicWords, waveCount);
-    const nextTasks = await this.getNextTasks(studentId, topicId);
+    const previewLimit = unlockedWords.length;
+    const allTasks = await this.getNextTasks(studentId, { topicId, limit: previewLimit });
     const topicProgress = await this.getTopicProgress(studentId, topicId);
 
     const words: TopicWordOverview[] = [];
@@ -215,7 +232,8 @@ export class LearningEngine {
     return {
       topicId,
       topicProgress,
-      upcomingTasks: nextTasks,
+      upcomingTasks: allTasks.slice(0, QUEUE_SLOTS.total),
+      followingTasks: allTasks.slice(QUEUE_SLOTS.total),
       words,
     };
   }

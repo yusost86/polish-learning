@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { CATALOG_WORDS, DEFAULT_STUDENT_ID } from "../data/wordCatalog";
+import { DEFAULT_STUDENT_ID } from "../data/wordCatalog";
+import { getCachedWords } from "../data/catalogProvider";
 import type { Word } from "../domain/models/Word";
 import type { ExerciseTask } from "../domain/models/ExerciseTask";
 import type { LearningQueueItem } from "../domain/models/LearningQueueItem";
@@ -58,6 +59,7 @@ export function useExerciseSession({
   onBack,
 }: UseExerciseSessionParams): UseExerciseSessionResult {
   const [queue, setQueue] = useState<LearningQueueItem[]>([]);
+  const [wordPool, setWordPool] = useState<Word[]>(() => getCachedWords());
   const [taskIndex, setTaskIndex] = useState(0);
   const [phase, setPhase] = useState<SessionPhase>("loading");
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -90,6 +92,7 @@ export function useExerciseSession({
         }
 
         setQueue(tasks);
+        setWordPool(getCachedWords());
         setTaskIndex(0);
         setPhase(tasks.length > 0 ? "exercise" : "complete");
         answerStartedAtRef.current = Date.now();
@@ -109,7 +112,6 @@ export function useExerciseSession({
   }, [mode, topicId, retryCount]);
 
   const currentItem = queue[taskIndex] ?? null;
-  const wordPool = useMemo<Word[]>(() => CATALOG_WORDS, []);
 
   const task = useMemo(() => {
     if (!currentItem) {

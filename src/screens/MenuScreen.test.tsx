@@ -24,41 +24,47 @@ function renderApp(initialEntry = "/") {
 }
 
 describe("MenuScreen", () => {
-  it("renders hardcoded stats, topics, and nav", () => {
+  it("renders live stats, topics, and nav", async () => {
     renderApp();
 
     expect(screen.getByText("Словник")).toBeInTheDocument();
-    expect(screen.getByText("Унікальних слів")).toBeInTheDocument();
-    expect(screen.getByText("120")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Повторити 8 слів/ })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Унікальних слів")).toBeInTheDocument();
+      expect(screen.getAllByText("27").length).toBeGreaterThanOrEqual(1);
+    });
+    expect(screen.queryByRole("button", { name: /Повторити \d+ слів/ })).not.toBeInTheDocument();
     expect(screen.getByText("Їжа")).toBeInTheDocument();
     expect(screen.getByText("Подорожі")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Вивчити нові: Їжа" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Вивчити нові: Їжа" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Вивчити нові: Подорожі" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Статистика/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Всі слова/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Повторити: Подорожі" })).toBeDisabled();
   });
 
-  it("opens global due session from menu", async () => {
+  it("does not open review session when topic repeat is disabled", async () => {
     renderApp();
-    fireEvent.click(screen.getByRole("button", { name: /Повторити 8 слів/ }));
-    await waitFor(() => expect(screen.getByText("Сесію завершено")).toBeInTheDocument());
-    expect(screen.getByText(/0 вправи · Повторити/)).toBeInTheDocument();
+    const repeatButton = await screen.findByRole("button", { name: "Повторити: Подорожі" });
+    expect(repeatButton).toBeDisabled();
+    fireEvent.click(repeatButton);
+    expect(screen.getByText("Словник")).toBeInTheDocument();
+    expect(screen.queryByText("Завантаження сесії…")).not.toBeInTheDocument();
   });
 
   it("opens a new-word session from a topic card", async () => {
     renderApp();
-    fireEvent.click(screen.getByRole("button", { name: "Вивчити нові: Їжа" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Вивчити нові: Їжа" }));
     await waitFor(() => expect(screen.getByText("Розпізнавання")).toBeInTheDocument());
     expect(screen.getByText(/Вивчити нові/)).toBeInTheDocument();
     expect(screen.getByText("przystawka")).toBeInTheDocument();
   });
 
-  it("opens stats and words stubs and returns home", () => {
+  it("opens stats and words stubs and returns home", async () => {
     renderApp();
+    await screen.findByRole("button", { name: "Вивчити нові: Їжа" });
     fireEvent.click(screen.getByRole("button", { name: /Статистика/ }));
-    expect(screen.getByRole("heading", { name: "Статистика" })).toBeInTheDocument();
-    expect(screen.getByText("До повторення")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Статистика" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("До повторення")).toBeInTheDocument());
 
     fireEvent.click(screen.getByLabelText("Назад"));
     expect(screen.getByText("Словник")).toBeInTheDocument();

@@ -1,7 +1,7 @@
 import type { Card } from "ts-fsrs";
 
 import { db } from "../db/database";
-import { seedCatalogIfEmpty } from "../db/seedCatalog";
+import { ensureTopicsSeeded, seedCatalogIfEmpty } from "../db/seedCatalog";
 import type { Word } from "../domain/models/Word";
 import { createEmptyWordProgress, type WordProgress } from "../domain/models/WordProgress";
 import type { LearningDataRepository } from "./WordProgressRepository";
@@ -15,6 +15,7 @@ import {
 export class DexieLearningRepository implements LearningDataRepository {
   async initialize(): Promise<void> {
     await seedCatalogIfEmpty();
+    await ensureTopicsSeeded();
   }
 
   async getProgress(studentId: string, wordId: string): Promise<WordProgress | null> {
@@ -75,5 +76,61 @@ export class DexieLearningRepository implements LearningDataRepository {
       topicId,
       unlockedWaveCount: count,
     });
+  }
+
+  async getTopicNames(): Promise<Record<string, string>> {
+    const topics = await db.topics.toArray();
+    const names: Record<string, string> = {};
+    for (const topic of topics) {
+      names[topic.id] = topic.name;
+    }
+    return names;
+  }
+
+  async saveTopicNames(topicNames: Record<string, string>): Promise<void> {
+    await db.topics.bulkPut(
+      Object.entries(topicNames).map(([id, name]) => ({ id, name })),
+    );
+  }
+
+  async addWords(words: Word[]): Promise<number> {
+    if (words.length === 0) {
+      return 0;
+    }
+    await db.words.bulkPut(
+      words.map((word) => ({
+        id: word.id,
+        term: word.term,
+        translation: word.translation,
+        topicId: word.topicId,
+      })),
+    );
+    return words.length;
+  }
+
+  async importCatalogBatch(words: Word[], topicNames: Record<string, string>): Promise<number> {
+    if (words.length === 0 && Object.keys(topicNames).length === 0) {
+      return 0;
+    }
+
+    await db.transaction("rw", [db.words, db.topics], async () => {
+      if (words.length > 0) {
+        await db.words.bulkPut(
+          words.map((word) => ({
+            id: word.id,
+            term: word.term,
+            translation: word.translation,
+            topicId: word.topicId,
+          })),
+        );
+      }
+      if (Object.keys(topicNames).length > 0) {
+        await db.topics.bulkPut(
+          Object.entries(topicNames).map(([id, name]) => ({ id, name })),
+        );
+      }
+    });
+
+    return words.length;
   }
 }

@@ -2,13 +2,22 @@ import { DexieLearningRepository } from "../repositories/DexieLearningRepository
 import { InMemoryLearningRepository } from "../repositories/InMemoryLearningRepository";
 import { db } from "../db/database";
 import { CATALOG_WORDS } from "../data/wordCatalog";
+import { setCatalogCache } from "../data/catalogProvider";
 import { LearningEngine } from "./LearningEngine";
+import { syncCatalogCache } from "./catalogSync";
 
 let engine: LearningEngine | null = null;
 let initPromise: Promise<LearningEngine> | null = null;
 
+async function attachCatalogSync(instance: LearningEngine, repository: DexieLearningRepository | InMemoryLearningRepository): Promise<LearningEngine> {
+  await syncCatalogCache(repository, setCatalogCache);
+  return instance;
+}
+
 export function createInMemoryLearningEngine(): LearningEngine {
-  return new LearningEngine(new InMemoryLearningRepository(CATALOG_WORDS));
+  const repository = new InMemoryLearningRepository(CATALOG_WORDS);
+  void syncCatalogCache(repository, setCatalogCache);
+  return new LearningEngine(repository);
 }
 
 export async function initLearningEngine(): Promise<LearningEngine> {
@@ -20,6 +29,7 @@ export async function initLearningEngine(): Promise<LearningEngine> {
       const repository = new DexieLearningRepository();
       await repository.initialize();
       engine = new LearningEngine(repository);
+      await attachCatalogSync(engine, repository);
       return engine;
     })();
   }
@@ -34,10 +44,12 @@ export function getLearningEngine(): LearningEngine {
 }
 
 export function resetLearningEngineForTests(inMemory = true): LearningEngine {
-  engine = inMemory
-    ? createInMemoryLearningEngine()
-    : new LearningEngine(new DexieLearningRepository());
+  const repository = inMemory
+    ? new InMemoryLearningRepository(CATALOG_WORDS)
+    : new DexieLearningRepository();
+  engine = new LearningEngine(repository);
   initPromise = Promise.resolve(engine);
+  void syncCatalogCache(repository, setCatalogCache);
   return engine;
 }
 

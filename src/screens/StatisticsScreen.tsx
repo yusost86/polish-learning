@@ -1,11 +1,11 @@
-import { HARDCODED_MENU_SUMMARY } from "../hooks/useMenuScreen";
+import { useMenuStats } from "../hooks/useMenuStats";
 import { usePlaceholderScreen } from "../hooks/usePlaceholderScreen";
 import { PlaceholderView } from "./components/PlaceholderView";
 import { StatRow } from "./components/StatRow";
 
 export default function StatisticsScreen() {
   const { onBack } = usePlaceholderScreen();
-  const summary = HARDCODED_MENU_SUMMARY;
+  const { summary, loading, error } = useMenuStats();
   const progressPct = summary.totalUniqueWords
     ? Math.round((summary.learnedWordsCount / summary.totalUniqueWords) * 100)
     : 0;
@@ -20,11 +20,17 @@ export default function StatisticsScreen() {
           padding: "18px 20px",
         }}
       >
-        <StatRow label="Унікальних слів" value={summary.totalUniqueWords} />
-        <StatRow label="Нових слів" value={summary.newWordsCount} />
-        <StatRow label="Вивчених слів" value={summary.learnedWordsCount} />
-        <StatRow label="До повторення" value={summary.dueNowCount} />
-        <StatRow label="Прогрес" value={`${progressPct}%`} />
+        {loading && <p style={{ margin: 0, color: "var(--text-dim)", fontSize: 14 }}>Завантаження…</p>}
+        {error && !loading && <p style={{ margin: 0, color: "var(--bad)", fontSize: 14 }}>{error}</p>}
+        {!loading && !error && (
+          <>
+            <StatRow label="Унікальних слів" value={summary.totalUniqueWords} />
+            <StatRow label="Нових слів" value={summary.newWordsCount} />
+            <StatRow label="Вивчених слів" value={summary.learnedWordsCount} />
+            <StatRow label="До повторення" value={summary.dueNowCount} />
+            <StatRow label="Прогрес" value={`${progressPct}%`} />
+          </>
+        )}
       </section>
     </PlaceholderView>
   );

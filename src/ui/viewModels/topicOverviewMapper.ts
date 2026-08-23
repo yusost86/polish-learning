@@ -1,3 +1,4 @@
+import { QUEUE_SLOTS } from "../../domain/constants";
 import { getTopicName } from "../../data/wordCatalog";
 import type { LearningQueueItem } from "../../domain/models/LearningQueueItem";
 import type { TopicOverview } from "../../domain/models/TopicOverview";
@@ -25,7 +26,10 @@ export function toTopicOverviewViewModel(overview: TopicOverview): TopicOverview
     topicId: overview.topicId,
     topicName: getTopicName(overview.topicId),
     topicProgress: overview.topicProgress,
-    upcomingTasks: overview.upcomingTasks.map(toUpcomingTaskViewModel),
+    upcomingTasks: overview.upcomingTasks.map((item, index) => toUpcomingTaskViewModel(item, index)),
+    followingTasks: overview.followingTasks.map((item, index) =>
+      toUpcomingTaskViewModel(item, QUEUE_SLOTS.total + index),
+    ),
     words: overview.words,
   };
 }

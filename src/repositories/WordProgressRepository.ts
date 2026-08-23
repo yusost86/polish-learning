@@ -18,4 +18,14 @@ export interface TopicProgressRepository {
   setUnlockedWaveCount(studentId: string, topicId: string, count: number): Promise<void>;
 }
 
-export interface LearningDataRepository extends WordProgressRepository, TopicProgressRepository {}
+export interface WordCatalogRepository {
+  getTopicNames(): Promise<Record<string, string>>;
+  addWords(words: Word[]): Promise<number>;
+  saveTopicNames(topicNames: Record<string, string>): Promise<void>;
+  importCatalogBatch(words: Word[], topicNames: Record<string, string>): Promise<number>;
+}
+
+export interface LearningDataRepository
+  extends WordProgressRepository,
+    TopicProgressRepository,
+    WordCatalogRepository {}

@@ -94,7 +94,7 @@ export function TopicOverviewView({
             letterSpacing: "0.05em",
           }}
         >
-          Наступні вправи ({overview.upcomingTasks.length})
+          Наступна сесія ({overview.upcomingTasks.length})
         </div>
         <div
           style={{
@@ -114,6 +114,36 @@ export function TopicOverviewView({
           ))}
         </div>
       </section>
+
+      {overview.followingTasks.length > 0 && (
+        <section>
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: "var(--text-dim)",
+              marginBottom: 10,
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+            }}
+          >
+            Далі в черзі ({overview.followingTasks.length})
+          </div>
+          <div
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-m)",
+              padding: "4px 16px",
+              opacity: 0.85,
+            }}
+          >
+            {overview.followingTasks.map((task) => (
+              <UpcomingTaskRow key={`${task.wordId}-${task.index}`} task={task} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section>
         <div

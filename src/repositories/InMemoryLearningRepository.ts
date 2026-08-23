@@ -3,15 +3,20 @@ import type { Card } from "ts-fsrs";
 import type { Word } from "../domain/models/Word";
 import { createEmptyWordProgress, type WordProgress } from "../domain/models/WordProgress";
 import type { LearningDataRepository } from "./WordProgressRepository";
+import { TOPIC_NAMES } from "../data/wordCatalog";
 
 export class InMemoryLearningRepository implements LearningDataRepository {
   private readonly words = new Map<string, Word>();
   private readonly progress = new Map<string, WordProgress>();
   private readonly waveCounts = new Map<string, number>();
+  private readonly topicNames = new Map<string, string>();
 
   constructor(words: Word[]) {
     for (const word of words) {
       this.words.set(word.id, word);
+    }
+    for (const [id, name] of Object.entries(TOPIC_NAMES)) {
+      this.topicNames.set(id, name);
     }
   }
 
@@ -81,5 +86,32 @@ export class InMemoryLearningRepository implements LearningDataRepository {
 
   seedProgress(progress: WordProgress): void {
     this.progress.set(this.progressKey(progress.studentId, progress.wordId), progress);
+  }
+
+  async getTopicNames(): Promise<Record<string, string>> {
+    return Object.fromEntries(this.topicNames.entries());
+  }
+
+  async saveTopicNames(topicNames: Record<string, string>): Promise<void> {
+    for (const [id, name] of Object.entries(topicNames)) {
+      this.topicNames.set(id, name);
+    }
+  }
+
+  async addWords(words: Word[]): Promise<number> {
+    for (const word of words) {
+      this.words.set(word.id, word);
+    }
+    return words.length;
+  }
+
+  async importCatalogBatch(words: Word[], topicNames: Record<string, string>): Promise<number> {
+    for (const word of words) {
+      this.words.set(word.id, word);
+    }
+    for (const [id, name] of Object.entries(topicNames)) {
+      this.topicNames.set(id, name);
+    }
+    return words.length;
   }
 }

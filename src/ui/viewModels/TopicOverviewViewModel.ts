@@ -39,5 +39,6 @@ export interface TopicOverviewViewModel {
   topicName: string;
   topicProgress: TopicProgress;
   upcomingTasks: UpcomingTaskViewModel[];
+  followingTasks: UpcomingTaskViewModel[];
   words: TopicWordViewModel[];
 }

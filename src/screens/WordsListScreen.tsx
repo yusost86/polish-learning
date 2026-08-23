@@ -2,7 +2,18 @@ import { useWordsListScreen } from "../hooks/useWordsListScreen";
 import { BackButton } from "./components/BackButton";
 
 export default function WordsListScreen() {
-  const { topics, onBack, onOpenTopic } = useWordsListScreen();
+  const {
+    topics,
+    importText,
+    importMessage,
+    importError,
+    importing,
+    onBack,
+    onOpenTopic,
+    onImportTextChange,
+    onImportWords,
+    onUseExample,
+  } = useWordsListScreen();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -10,9 +21,80 @@ export default function WordsListScreen() {
       <header>
         <h1 style={{ fontSize: 26 }}>Теми та слова</h1>
         <p style={{ margin: "8px 0 0", color: "var(--text-dim)", fontSize: 14, lineHeight: 1.5 }}>
-          Оберіть тему, щоб переглянути наступні вправи та прогрес по кожному слову.
+          Оберіть тему або додайте нові слова JSON-форматом.
         </p>
       </header>
+
+      <section
+        style={{
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-l)",
+          padding: "16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+        }}
+      >
+        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)" }}>Додати слова</div>
+        <p style={{ margin: 0, color: "var(--text-dim)", fontSize: 13, lineHeight: 1.5 }}>
+          Формат: <code>[{"{ topic, words: { pl, ua } }"}]</code> або масив words у записі. Дублікати в
+          межах теми пропускаються; те саме слово може бути в різних темах.
+        </p>
+        <textarea
+          value={importText}
+          onChange={(event) => onImportTextChange(event.target.value)}
+          placeholder='[{"topic":"health","words":{"pl":"lekarz","ua":"лікар"}}]'
+          rows={8}
+          style={{
+            width: "100%",
+            resize: "vertical",
+            padding: "12px",
+            borderRadius: "var(--radius-s)",
+            border: "1px solid var(--border)",
+            background: "var(--surface-alt)",
+            color: "var(--text)",
+            fontFamily: "ui-monospace, monospace",
+            fontSize: 13,
+          }}
+        />
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button
+            onClick={() => void onImportWords()}
+            disabled={importing || !importText.trim()}
+            style={{
+              padding: "10px 14px",
+              borderRadius: "var(--radius-s)",
+              background: "var(--gold)",
+              color: "#2a1e0c",
+              fontWeight: 700,
+              fontSize: 14,
+              opacity: importing || !importText.trim() ? 0.6 : 1,
+            }}
+          >
+            {importing ? "Імпорт…" : "Імпортувати"}
+          </button>
+          <button
+            onClick={onUseExample}
+            style={{
+              padding: "10px 14px",
+              borderRadius: "var(--radius-s)",
+              background: "var(--surface-alt)",
+              color: "var(--text-dim)",
+              fontWeight: 600,
+              fontSize: 14,
+            }}
+          >
+            Приклад JSON
+          </button>
+        </div>
+        {importMessage && (
+          <p style={{ margin: 0, color: "var(--good)", fontSize: 14, whiteSpace: "pre-wrap" }}>{importMessage}</p>
+        )}
+        {importError && (
+          <p style={{ margin: 0, color: "var(--bad)", fontSize: 14, whiteSpace: "pre-wrap" }}>{importError}</p>
+        )}
+      </section>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {topics.map((topic) => (

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { QUEUE_SLOTS } from "../domain/constants";
 import { ExerciseType } from "../domain/enums/ExerciseType";
 import { SelectionReason } from "../domain/enums/SelectionReason";
 import { WordState } from "../domain/enums/WordState";
@@ -167,5 +168,38 @@ describe("ReviewQueueBuilder", () => {
     });
 
     expect(queue).toHaveLength(0);
+  });
+
+  it("due session mode returns only FSRS due words without filling to 10", () => {
+    const progressByWordId = new Map<string, ReturnType<typeof createEmptyWordProgress>>();
+
+    for (const [index, word] of TRAVEL_WORDS.entries()) {
+      const progress = createEmptyWordProgress(SCENARIO_STUDENT_ID, word.id, now, createInitialCard(now));
+      if (index === 0) {
+        progressByWordId.set(word.id, progress);
+        continue;
+      }
+      progress.state = WordState.Learning;
+      progress.totalAttempts = 2;
+      progress.fsrsCard = {
+        ...progress.fsrsCard,
+        due: new Date("2026-08-22T12:00:00.000Z"),
+        state: 2,
+        reps: 1,
+      };
+      progressByWordId.set(word.id, progress);
+    }
+
+    const queue = builder.build({
+      topicId: "travel",
+      topicWords: TRAVEL_WORDS,
+      allWords: TRAVEL_WORDS,
+      progressByWordId,
+      now,
+      sessionMode: "due",
+    });
+
+    expect(queue).toHaveLength(TRAVEL_WORDS.length - 1);
+    expect(queue.length).toBeLessThan(QUEUE_SLOTS.total);
   });
 });

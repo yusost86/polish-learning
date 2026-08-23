@@ -51,8 +51,14 @@ export interface StoredTopicWave {
   unlockedWaveCount: number;
 }
 
+export interface StoredTopic {
+  id: string;
+  name: string;
+}
+
 export class LearningDatabase extends Dexie {
   words!: EntityTable<StoredWord, "id">;
+  topics!: EntityTable<StoredTopic, "id">;
   studentWordProgress!: EntityTable<StoredWordProgress, "id">;
   topicWaves!: EntityTable<StoredTopicWave, "id">;
 
@@ -60,6 +66,12 @@ export class LearningDatabase extends Dexie {
     super("PolishLearning");
     this.version(1).stores({
       words: "id, topicId",
+      studentWordProgress: "id, studentId, wordId, [studentId+wordId]",
+      topicWaves: "id, studentId, topicId, [studentId+topicId]",
+    });
+    this.version(2).stores({
+      words: "id, topicId",
+      topics: "id",
       studentWordProgress: "id, studentId, wordId, [studentId+wordId]",
       topicWaves: "id, studentId, topicId, [studentId+topicId]",
     });
