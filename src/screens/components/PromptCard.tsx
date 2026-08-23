@@ -1,25 +1,33 @@
-export function PromptCard({ label, text, edgeColor }: { label: string; text: string; edgeColor: string; }) {
+interface PromptCardProps {
+  label: string;
+  prompt: string;
+  isMaskedWord?: boolean;
+}
+
+export function PromptCard({ label, prompt, isMaskedWord = false }: PromptCardProps) {
   return (
-    <div
+    <section
       style={{
-        width: '100%',
-        maxWidth: 340,
-        borderRadius: 'var(--radius-l)',
-        background: 'var(--surface)',
-        border: `2px solid ${edgeColor}`,
-        boxShadow: '0 20px 40px rgba(0,0,0,0.35)',
-        padding: '32px 24px',
-        textAlign: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 14,
-        margin: '0 auto',
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-l)",
+        padding: "22px 20px",
+        textAlign: "center",
       }}
     >
-      <span className="mono" style={{ fontSize: 12, fontWeight: 700, color: edgeColor, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-        {label}
-      </span>
-      <span style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, lineHeight: 1.2 }}>{text}</span>
-    </div>
+      <div style={{ fontSize: 13, color: "var(--text-dim)", marginBottom: 10 }}>{label}</div>
+      <div
+        className={isMaskedWord ? "mono" : undefined}
+        style={{
+          fontFamily: isMaskedWord ? "var(--font-mono)" : "var(--font-display)",
+          fontSize: isMaskedWord ? 28 : 32,
+          fontWeight: 700,
+          letterSpacing: isMaskedWord ? "0.08em" : "-0.02em",
+          lineHeight: 1.3,
+        }}
+      >
+        {prompt}
+      </div>
+    </section>
   );
 }

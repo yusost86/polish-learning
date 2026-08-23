@@ -1,0 +1,42 @@
+---
+description: TypeScript standards for the React app
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# TypeScript
+
+`strict` is on (`noUnusedLocals`, `noUnusedParameters`). Keep it that way.
+
+## Types
+
+- Never use `any`. Use `unknown` and narrow. Avoid `as` except DOM/`JSON` boundaries.
+- Domain models and enums live in `src/domain/`. UI files `import type` them; they do not redefine the same shapes.
+- `interface` for object shapes (props, models). `type` for unions, mapped types, and aliases.
+- Use `import type { Foo }` for type-only imports.
+- Prefer discriminated unions / domain enums (`SkillType`, `WordState`) over stringly-typed values.
+- Exported functions and hooks should have explicit return types when the return is non-trivial.
+- Generics for reusable helpers: `function shuffled<T>(arr: T[]): T[]`.
+- Props: required by default. Optional with `?` and a default in the destructure.
+
+```ts
+// ❌ BAD
+function save(data: any) {
+  return db.words.put(data as Word);
+}
+
+// ✅ GOOD
+function save(data: unknown): Promise<string> {
+  const word = parseWord(data);
+  return db.words.put(word);
+}
+```
+
+```ts
+// ❌ BAD — duplicate domain type in a Screen
+type WordState = "new" | "learning";
+
+// ✅ GOOD
+import type { Word } from "../domain/models/Word";
+import { WordState } from "../domain/enums/WordState";
+```

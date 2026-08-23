@@ -1,0 +1,42 @@
+---
+description: Smart/dumb React components — screens vs views
+globs: src/**/*.tsx
+alwaysApply: false
+---
+
+# React components
+
+Use functional components. Split **smart** (container) and **dumb** (presentational).
+
+## Placement
+
+- **Smart:** `src/screens/*Screen.tsx` — data, routing, hooks, services. Compose views; keep JSX thin.
+- **Dumb:** `src/screens/components/*`, `*View.tsx` — render props, emit callbacks. No fetch, Dexie, routers, or domain services.
+- Shared UI pieces live in `screens/components/`. Do not nest new presentational components inside a Screen file.
+
+## Rules
+
+- Screens default-export the page. Reusable UI uses named exports.
+- Type props with `FooProps`. Prefer `function Foo({ ... }: FooProps)` over `FC`.
+- Dumb components receive data + `onEvent` callbacks. They may hold **local UI state** (input text, open/closed) but not app/session state.
+- Do not put learning/FSRS/DB logic in components. Call hooks or `src/services/`.
+- Do not export helpers from Screen files. Put them in `src/utils/` or a hook.
+
+```tsx
+// ❌ BAD — Screen fetches and paints details
+export default function WordDetailScreen() {
+  const [word, setWord] = useState<Word | null>(null);
+  useEffect(() => { db.words.get(id).then(setWord); }, [id]);
+  return <div>{word?.lemma}</div>;
+}
+
+// ✅ GOOD — Screen wires; View renders
+export default function WordDetailScreen() {
+  const { word, onBack } = useWordDetail();
+  return <WordDetailView word={word} onBack={onBack} />;
+}
+
+export function WordDetailView({ word, onBack }: WordDetailViewProps) {
+  return <section><BackButton onClick={onBack} /><h1>{word.lemma}</h1></section>;
+}
+```

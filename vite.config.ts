@@ -2,14 +2,20 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-export default defineConfig({
-  base: '/polish-learning/',
+import pkg from './package.json'
+
+export default defineConfig(({ command }) => ({
+  // gh-pages needs /polish-learning/; local dev uses / for simpler URLs
+  base: command === 'serve' ? '/' : '/polish-learning/',
+  define: {
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(pkg.version),
+  },
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: null,
-      manifest: false, // manifest.json is hand-authored in /public and linked from index.html
+      manifest: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
       },
@@ -18,11 +24,11 @@ export default defineConfig({
 
   server: {
     host: '0.0.0.0',
-    https: true,
+    open: true,
   },
 
   preview: {
     host: '0.0.0.0',
     https: true,
   },
-})
+}))

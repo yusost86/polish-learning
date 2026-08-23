@@ -1,0 +1,47 @@
+---
+description: React hooks conventions for this app
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# React hooks
+
+## Custom hooks
+
+- Name `useX`, one hook per file, path `src/hooks/useX.ts` (use `.tsx` only if the file contains JSX).
+- Call hooks only at the top level of a component or custom hook — never in conditions, loops, or callbacks.
+- Extract data loading, session flow, and derived app state into hooks. Screens should mostly call hooks and pass results to views.
+- Hooks return data + callbacks, **never JSX**.
+- Keep domain/scheduling logic in `src/services/`; hooks orchestrate React state around those services.
+
+## Built-in hooks
+
+- `useState` — UI and hook-local state only. Do not mirror server/DB state in many places; reload via a single hook (see `useAppData`).
+- `useEffect` — synchronize with external systems (DB, subscriptions). Always return cleanup when needed. List every used value in the dependency array.
+- `useMemo` / `useCallback` — only when the value is expensive or a child/effect depends on referential equality. Do not wrap everything.
+- `useRef` — mutable values that must not trigger render (guards, DOM nodes). Do not use refs as a state store.
+
+## Context
+
+- Pair provider + consumer hook in the same file. The consumer **throws** if used outside the provider.
+
+```ts
+// ❌ BAD — effect without cleanup / deps; logic stuck in the Screen
+useEffect(() => {
+  const t = setInterval(tick, 1000);
+  if (ready) load();
+});
+
+// ✅ GOOD — hook owns lifecycle; Screen only consumes
+export function useWordDetail(wordId: string) {
+  const [word, setWord] = useState<Word | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void db.words.get(wordId).then((row) => {
+      if (!cancelled) setWord(row ?? null);
+    });
+    return () => { cancelled = true; };
+  }, [wordId]);
+  return { word };
+}
+```

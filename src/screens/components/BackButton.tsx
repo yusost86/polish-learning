@@ -1,10 +1,26 @@
-export function BackButton({ onClick }: { onClick: () => void; }) {
+interface BackButtonProps {
+  onClick: () => void;
+}
+
+export function BackButton({ onClick }: BackButtonProps) {
   return (
     <button
       onClick={onClick}
-      style={{ padding: '13px 24px', borderRadius: 'var(--radius-m)', background: 'var(--gold)', color: '#2a1e0c', fontWeight: 700 }}
+      aria-label="Назад"
+      style={{
+        width: 40,
+        height: 40,
+        borderRadius: "50%",
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        color: "var(--text)",
+        fontSize: 18,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
     >
-      ← До меню
+      ←
     </button>
   );
 }

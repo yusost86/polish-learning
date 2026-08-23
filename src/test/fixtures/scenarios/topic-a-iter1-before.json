@@ -1,0 +1,96 @@
+{
+  "studentId": "student-1",
+  "topicId": "travel",
+  "now": "2026-08-23T12:00:00.000Z",
+  "words": [
+    {
+      "wordId": "boarding-pass",
+      "state": "LEARNING",
+      "mastery": 0.25,
+      "skills": { "recognition": 0.40, "recall": 0.15, "production": 0.20, "context": 0.25 },
+      "errorCount": 3,
+      "consecutiveErrors": 0,
+      "consecutiveCorrect": 1,
+      "fsrsDue": "2026-08-23T11:00:00.000Z"
+    },
+    {
+      "wordId": "gate",
+      "state": "RELEARNING",
+      "mastery": 0.00,
+      "skills": { "recognition": 0.05, "recall": 0.00, "production": 0.00, "context": 0.00 },
+      "errorCount": 5,
+      "consecutiveErrors": 1,
+      "consecutiveCorrect": 0,
+      "fsrsDue": "2026-08-23T10:00:00.000Z"
+    },
+    {
+      "wordId": "reservation",
+      "state": "CONSOLIDATING",
+      "mastery": 0.40,
+      "skills": { "recognition": 0.55, "recall": 0.45, "production": 0.35, "context": 0.25 },
+      "errorCount": 1,
+      "consecutiveCorrect": 2,
+      "fsrsDue": "2026-08-13T12:00:00.000Z"
+    },
+    {
+      "wordId": "departure",
+      "state": "CONSOLIDATING",
+      "mastery": 0.44,
+      "skills": { "recognition": 0.60, "recall": 0.50, "production": 0.30, "context": 0.35 },
+      "errorCount": 0,
+      "consecutiveCorrect": 2,
+      "fsrsDue": "2026-08-23T11:30:00.000Z"
+    },
+    {
+      "wordId": "airport",
+      "state": "CONSOLIDATING",
+      "mastery": 0.55,
+      "skills": { "recognition": 0.75, "recall": 0.65, "production": 0.55, "context": 0.25 },
+      "errorCount": 0,
+      "consecutiveCorrect": 3,
+      "fsrsDue": "2026-08-26T12:00:00.000Z"
+    },
+    {
+      "wordId": "train-station",
+      "state": "CONSOLIDATING",
+      "mastery": 0.44,
+      "skills": { "recognition": 0.60, "recall": 0.50, "production": 0.25, "context": 0.40 },
+      "errorCount": 0,
+      "consecutiveCorrect": 1,
+      "fsrsDue": "2026-08-26T12:00:00.000Z"
+    },
+    {
+      "wordId": "passport",
+      "state": "CONSOLIDATING",
+      "mastery": 0.44,
+      "skills": { "recognition": 0.55, "recall": 0.50, "production": 0.22, "context": 0.50 },
+      "errorCount": 0,
+      "consecutiveCorrect": 1,
+      "fsrsDue": "2026-08-26T12:00:00.000Z"
+    },
+    {
+      "wordId": "luggage",
+      "state": "NEW",
+      "mastery": 0.00,
+      "skills": { "recognition": 0.00, "recall": 0.00, "production": 0.00, "context": 0.00 },
+      "errorCount": 0,
+      "fsrsDue": null
+    },
+    {
+      "wordId": "flight",
+      "state": "NEW",
+      "mastery": 0.00,
+      "skills": { "recognition": 0.00, "recall": 0.00, "production": 0.00, "context": 0.00 },
+      "errorCount": 0,
+      "fsrsDue": null
+    },
+    {
+      "wordId": "arrival",
+      "state": "NEW",
+      "mastery": 0.00,
+      "skills": { "recognition": 0.00, "recall": 0.00, "production": 0.00, "context": 0.00 },
+      "errorCount": 0,
+      "fsrsDue": null
+    }
+  ]
+}
