@@ -19,11 +19,12 @@ describe("LearningEngine.deleteTopic", () => {
       createInitialCard,
     );
 
+    const travelWordCount = CATALOG_WORDS.filter((word) => word.topicId === "travel").length;
     const result = await engine.deleteTopic(DEFAULT_STUDENT_ID, "travel");
 
-    expect(result).toEqual({ topicId: "travel", deletedWordCount: 10 });
+    expect(result).toEqual({ topicId: "travel", deletedWordCount: travelWordCount });
     expect(await repository.getTopicWords("travel")).toHaveLength(0);
-    expect(await repository.getAllWords()).toHaveLength(CATALOG_WORDS.length - 10);
+    expect(await repository.getAllWords()).toHaveLength(CATALOG_WORDS.length - travelWordCount);
     expect(await repository.getProgress(DEFAULT_STUDENT_ID, "airport")).toBeNull();
     expect((await repository.getTopicNames()).travel).toBeUndefined();
 

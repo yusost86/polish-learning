@@ -8,6 +8,13 @@ export const TOPIC_NAMES: Record<string, string> = {
   "daily-life": "Побут",
 };
 
+/** Initial word counts per topic on first app initialization (issue #6). */
+export const INITIAL_TOPIC_WORD_COUNTS: Record<keyof typeof TOPIC_NAMES, number> = {
+  travel: 25,
+  food: 15,
+  "daily-life": 7,
+};
+
 export const CATALOG_WORDS: Word[] = [
   {
     id: "airport",
@@ -80,6 +87,111 @@ export const CATALOG_WORDS: Word[] = [
     contextSentence: "Jadę na ______.",
   },
   {
+    id: "hotel",
+    term: "hotel",
+    translation: "готель",
+    topicId: "travel",
+    contextSentence: "Mój ______ jest blisko lotniska.",
+  },
+  {
+    id: "ticket",
+    term: "bilet",
+    translation: "квиток",
+    topicId: "travel",
+    contextSentence: "Kupiłem ______ na pociąg.",
+  },
+  {
+    id: "train",
+    term: "pociąg",
+    translation: "поїзд",
+    topicId: "travel",
+    contextSentence: "Ten ______ jest opóźniony.",
+  },
+  {
+    id: "taxi",
+    term: "taksówka",
+    translation: "таксі",
+    topicId: "travel",
+    contextSentence: "Wezmę ______ do hotelu.",
+  },
+  {
+    id: "map",
+    term: "mapa",
+    translation: "карта",
+    topicId: "travel",
+    contextSentence: "Mam ______ miasta.",
+  },
+  {
+    id: "customs",
+    term: "cło",
+    translation: "митниця",
+    topicId: "travel",
+    contextSentence: "Przeszedłem przez ______.",
+  },
+  {
+    id: "border",
+    term: "granica",
+    translation: "кордон",
+    topicId: "travel",
+    contextSentence: "Jedziemy do ______.",
+  },
+  {
+    id: "delay",
+    term: "opóźnienie",
+    translation: "затримка",
+    topicId: "travel",
+    contextSentence: "Lot ma ______.",
+  },
+  {
+    id: "platform",
+    term: "peron",
+    translation: "перон",
+    topicId: "travel",
+    contextSentence: "Czekam na ______ trzy.",
+  },
+  {
+    id: "suitcase",
+    term: "walizka",
+    translation: "валіза",
+    topicId: "travel",
+    contextSentence: "Moja ______ jest ciężka.",
+  },
+  {
+    id: "destination",
+    term: "cel",
+    translation: "пункт призначення",
+    topicId: "travel",
+    contextSentence: "Jaki jest nasz ______?",
+  },
+  {
+    id: "route",
+    term: "trasa",
+    translation: "маршрут",
+    topicId: "travel",
+    contextSentence: "Ta ______ jest krótka.",
+  },
+  {
+    id: "seat",
+    term: "miejsce",
+    translation: "місце",
+    topicId: "travel",
+    contextSentence: "Gdzie jest moje ______?",
+  },
+  {
+    id: "driver",
+    term: "kierowca",
+    translation: "водій",
+    topicId: "travel",
+    contextSentence: "______ czeka przy wjeździe.",
+  },
+  {
+    id: "bridge",
+    term: "most",
+    translation: "міст",
+    topicId: "travel",
+    contextSentence: "Przejechaliśmy przez ______.",
+  },
+  {
     id: "menu",
     term: "menu",
     translation: "меню",
@@ -148,6 +260,41 @@ export const CATALOG_WORDS: Word[] = [
     translation: "смачний",
     topicId: "food",
     contextSentence: "Ten obiad jest ______.",
+  },
+  {
+    id: "soup",
+    term: "zupa",
+    translation: "суп",
+    topicId: "food",
+    contextSentence: "Poproszę ______ pomidorową.",
+  },
+  {
+    id: "bread",
+    term: "chleb",
+    translation: "хліб",
+    topicId: "food",
+    contextSentence: "Czy macie świeży ______?",
+  },
+  {
+    id: "cheese",
+    term: "ser",
+    translation: "сир",
+    topicId: "food",
+    contextSentence: "Lubię polski ______.",
+  },
+  {
+    id: "coffee",
+    term: "kawa",
+    translation: "кава",
+    topicId: "food",
+    contextSentence: "Poproszę ______ bez cukru.",
+  },
+  {
+    id: "water",
+    term: "woda",
+    translation: "вода",
+    topicId: "food",
+    contextSentence: "Czy mogę dostać ______?",
   },
   {
     id: "breakfast",

@@ -1,20 +1,27 @@
 import { CATALOG_WORDS, TOPIC_NAMES } from "../data/wordCatalog";
 import { db } from "./database";
 
-export async function seedCatalogIfEmpty(): Promise<void> {
-  const count = await db.words.count();
-  if (count > 0) {
-    return;
-  }
+function toStoredWord(word: (typeof CATALOG_WORDS)[number]) {
+  return {
+    id: word.id,
+    term: word.term,
+    translation: word.translation,
+    topicId: word.topicId,
+  };
+}
 
-  await db.words.bulkPut(
-    CATALOG_WORDS.map((word) => ({
-      id: word.id,
-      term: word.term,
-      translation: word.translation,
-      topicId: word.topicId,
-    })),
-  );
+export async function seedCatalogIfEmpty(): Promise<void> {
+  const existingWords = await db.words.toArray();
+  const existingIds = new Set(existingWords.map((word) => word.id));
+
+  if (existingWords.length === 0) {
+    await db.words.bulkPut(CATALOG_WORDS.map(toStoredWord));
+  } else {
+    const missingWords = CATALOG_WORDS.filter((word) => !existingIds.has(word.id));
+    if (missingWords.length > 0) {
+      await db.words.bulkPut(missingWords.map(toStoredWord));
+    }
+  }
 
   await db.topics.bulkPut(
     Object.entries(TOPIC_NAMES).map(([id, name]) => ({ id, name })),
