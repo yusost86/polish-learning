@@ -4,6 +4,7 @@ import {
   isContextExerciseTask,
   isProductionExerciseTask,
 } from "../../domain/models/ExerciseTask";
+import { getTopicName } from "../../data/wordCatalog";
 import type { SessionPhase } from "../../ui/viewModels/GameTaskViewModel";
 import { exercisePromptLabel, exerciseTypeTitle } from "../../utils/exerciseUtils";
 import { AnswerFeedback } from "./AnswerFeedback";
@@ -49,7 +50,7 @@ export function GameSessionView({
   onRetry,
   loadError,
 }: GameSessionViewProps) {
-  const topicLabel = topicId ? ` · ${topicId}` : "";
+  const topicLabel = topicId ? ` · ${getTopicName(topicId)}` : "";
 
   if (phase === "loading") {
     return (
@@ -181,9 +182,8 @@ export function GameSessionView({
       {task && isContextExerciseTask(task) && (
         <>
           <PromptCard
-            label={promptLabel}
+            title={task.translationHint}
             prompt={task.prompt}
-            hint={task.translationHint}
             isMaskedWord
           />
           <TypeInExerciseView
