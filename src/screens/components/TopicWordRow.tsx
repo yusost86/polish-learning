@@ -34,6 +34,30 @@ function skillBar(label: string, value: number): JSX.Element {
 }
 
 export function TopicWordRow({ word }: TopicWordRowProps) {
+  if (word.isLocked) {
+    return (
+      <div
+        style={{
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-m)",
+          padding: "12px 14px",
+          opacity: 0.65,
+        }}
+      >
+        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center" }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>{word.term}</div>
+            <div style={{ fontSize: 13, color: "var(--text-dim)", marginTop: 2 }}>{word.translation}</div>
+          </div>
+          <div style={{ textAlign: "right", fontSize: 11, color: "var(--text-faint)", fontWeight: 600 }}>
+            Наступна хвиля
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <details
       style={{

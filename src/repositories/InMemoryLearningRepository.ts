@@ -1,5 +1,6 @@
 import type { Card } from "ts-fsrs";
 
+import type { TopicDeleteResult } from "../domain/models/TopicDeleteResult";
 import type { Word } from "../domain/models/Word";
 import { createEmptyWordProgress, type WordProgress } from "../domain/models/WordProgress";
 import type { LearningDataRepository } from "./WordProgressRepository";
@@ -113,5 +114,29 @@ export class InMemoryLearningRepository implements LearningDataRepository {
       this.topicNames.set(id, name);
     }
     return words.length;
+  }
+
+  async deleteTopic(topicId: string, studentId: string): Promise<TopicDeleteResult> {
+    const words = await this.getTopicWords(topicId);
+    const topicNames = await this.getTopicNames();
+    if (words.length === 0 && !topicNames[topicId]) {
+      throw new Error(`Topic "${topicId}" not found`);
+    }
+
+    const wordIds = new Set(words.map((word) => word.id));
+    for (const [id, word] of this.words.entries()) {
+      if (word.topicId === topicId) {
+        this.words.delete(id);
+      }
+    }
+    for (const [key, progress] of this.progress.entries()) {
+      if (wordIds.has(progress.wordId)) {
+        this.progress.delete(key);
+      }
+    }
+    this.topicNames.delete(topicId);
+    this.waveCounts.delete(this.waveKey(studentId, topicId));
+
+    return { topicId, deletedWordCount: words.length };
   }
 }

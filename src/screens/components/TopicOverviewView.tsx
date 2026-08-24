@@ -151,13 +151,19 @@ export function TopicOverviewView({
             fontSize: 13,
             fontWeight: 700,
             color: "var(--text-dim)",
-            marginBottom: 10,
+            marginBottom: 4,
             textTransform: "uppercase",
             letterSpacing: "0.05em",
           }}
         >
           Слова теми ({overview.words.length})
         </div>
+        {overview.words.some((word) => word.isLocked) && (
+          <div style={{ fontSize: 12, color: "var(--text-faint)", marginBottom: 10 }}>
+            {overview.words.filter((word) => !word.isLocked).length} доступно ·{" "}
+            {overview.words.filter((word) => word.isLocked).length} у наступній хвилі
+          </div>
+        )}
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {overview.words.map((word) => (
             <TopicWordRow key={word.wordId} word={word} />

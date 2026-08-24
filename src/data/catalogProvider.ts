@@ -30,6 +30,7 @@ export function getCachedTopics(): { topicId: string; name: string; wordCount: n
       name: cachedTopicNames[topicId] ?? topicId,
       wordCount: counts.get(topicId) ?? 0,
     }))
+    .filter((topic) => topic.wordCount > 0)
     .sort((a, b) => a.name.localeCompare(b.name, "uk"));
 }
 

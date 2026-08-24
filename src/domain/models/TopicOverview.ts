@@ -12,6 +12,7 @@ export interface TopicWordOverview {
   fsrsStatus: string;
   errorCount: number;
   totalAttempts: number;
+  isLocked: boolean;
   skills: {
     recognition: number;
     recall: number;

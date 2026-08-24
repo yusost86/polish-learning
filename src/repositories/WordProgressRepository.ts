@@ -1,5 +1,6 @@
 import type { Card } from "ts-fsrs";
 
+import type { TopicDeleteResult } from "../domain/models/TopicDeleteResult";
 import type { Word } from "../domain/models/Word";
 import type { WordProgress } from "../domain/models/WordProgress";
 
@@ -23,6 +24,7 @@ export interface WordCatalogRepository {
   addWords(words: Word[]): Promise<number>;
   saveTopicNames(topicNames: Record<string, string>): Promise<void>;
   importCatalogBatch(words: Word[], topicNames: Record<string, string>): Promise<number>;
+  deleteTopic(topicId: string, studentId: string): Promise<TopicDeleteResult>;
 }
 
 export interface LearningDataRepository

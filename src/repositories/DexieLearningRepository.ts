@@ -3,6 +3,7 @@ import type { Card } from "ts-fsrs";
 import { db } from "../db/database";
 import { ensureTopicsSeeded, seedCatalogIfEmpty } from "../db/seedCatalog";
 import type { Word } from "../domain/models/Word";
+import type { TopicDeleteResult } from "../domain/models/TopicDeleteResult";
 import { createEmptyWordProgress, type WordProgress } from "../domain/models/WordProgress";
 import type { LearningDataRepository } from "./WordProgressRepository";
 import {
@@ -132,5 +133,26 @@ export class DexieLearningRepository implements LearningDataRepository {
     });
 
     return words.length;
+  }
+
+  async deleteTopic(topicId: string, _studentId: string): Promise<TopicDeleteResult> {
+    const words = await this.getTopicWords(topicId);
+    const topicNames = await this.getTopicNames();
+    if (words.length === 0 && !topicNames[topicId]) {
+      throw new Error(`Topic "${topicId}" not found`);
+    }
+
+    const wordIds = words.map((word) => word.id);
+
+    await db.transaction("rw", [db.words, db.topics, db.studentWordProgress, db.topicWaves], async () => {
+      await db.words.where("topicId").equals(topicId).delete();
+      if (wordIds.length > 0) {
+        await db.studentWordProgress.where("wordId").anyOf(wordIds).delete();
+      }
+      await db.topics.delete(topicId);
+      await db.topicWaves.where("topicId").equals(topicId).delete();
+    });
+
+    return { topicId, deletedWordCount: words.length };
   }
 }

@@ -1,11 +1,13 @@
 import { ExerciseType } from "../domain/enums/ExerciseType";
 import type { SessionMode } from "../domain/enums/SessionMode";
 import { SkillType } from "../domain/enums/SkillType";
+import { WordState } from "../domain/enums/WordState";
 import type { AnswerInput } from "../domain/models/AnswerInput";
 import type { AnswerResult } from "../domain/models/AnswerResult";
 import type { LearningQueueItem } from "../domain/models/LearningQueueItem";
 import type { MenuStats } from "../domain/models/MenuStats";
 import type { TopicOverview, TopicWordOverview } from "../domain/models/TopicOverview";
+import type { TopicDeleteResult } from "../domain/models/TopicDeleteResult";
 import type { WordImportResult } from "../domain/models/WordImport";
 import type { TopicProgress } from "../domain/models/TopicProgress";
 import { createEmptyWordProgress, type WordProgress } from "../domain/models/WordProgress";
@@ -193,16 +195,45 @@ export class LearningEngine {
     return result;
   }
 
+  async deleteTopic(studentId: string, topicId: string): Promise<TopicDeleteResult> {
+    const result = await this.repository.deleteTopic(topicId, studentId);
+    await syncCatalogCache(this.repository, setCatalogCache);
+    return result;
+  }
+
   async getTopicOverview(studentId: string, topicId: string): Promise<TopicOverview> {
     const topicWords = await this.repository.getTopicWords(topicId);
     const waveCount = await this.repository.getUnlockedWaveCount(studentId, topicId);
     const unlockedWords = getUnlockedTopicWords(topicWords, waveCount);
+    const unlockedWordIds = new Set(unlockedWords.map((word) => word.id));
     const previewLimit = unlockedWords.length;
     const allTasks = await this.getNextTasks(studentId, { topicId, limit: previewLimit });
     const topicProgress = await this.getTopicProgress(studentId, topicId);
 
     const words: TopicWordOverview[] = [];
-    for (const word of unlockedWords) {
+    for (const word of topicWords) {
+      const isLocked = !unlockedWordIds.has(word.id);
+
+      if (isLocked) {
+        const progress = await this.repository.getProgress(studentId, word.id);
+        words.push({
+          wordId: word.id,
+          term: word.term,
+          translation: word.translation,
+          state: progress?.state ?? WordState.New,
+          mastery: progress ? calculateMastery(getSkillMasteries(progress)) : 0,
+          priorityDisplay: progress ? calculatePriorityBreakdown(progress, this.now).display : 0,
+          fsrsStatus: progress ? this.fsrsService.formatStatus(progress.fsrsCard, this.now) : "—",
+          errorCount: progress?.errorCount ?? 0,
+          totalAttempts: progress?.totalAttempts ?? 0,
+          isLocked: true,
+          skills: progress
+            ? getSkillMasteries(progress)
+            : { recognition: 0, recall: 0, production: 0, context: 0 },
+        });
+        continue;
+      }
+
       const progress = await this.repository.getOrCreateProgress(
         studentId,
         word.id,
@@ -223,11 +254,20 @@ export class LearningEngine {
         fsrsStatus: this.fsrsService.formatStatus(progress.fsrsCard, this.now),
         errorCount: progress.errorCount,
         totalAttempts: progress.totalAttempts,
+        isLocked: false,
         skills,
       });
     }
 
-    words.sort((a, b) => b.priorityDisplay - a.priorityDisplay || a.term.localeCompare(b.term));
+    words.sort((a, b) => {
+      if (a.isLocked !== b.isLocked) {
+        return a.isLocked ? 1 : -1;
+      }
+      if (!a.isLocked && !b.isLocked) {
+        return b.priorityDisplay - a.priorityDisplay || a.term.localeCompare(b.term);
+      }
+      return a.term.localeCompare(b.term);
+    });
 
     return {
       topicId,

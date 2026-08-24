@@ -8,8 +8,12 @@ export default function WordsListScreen() {
     importMessage,
     importError,
     importing,
+    deletingTopicId,
+    deleteMessage,
+    deleteError,
     onBack,
     onOpenTopic,
+    onDeleteTopic,
     onImportTextChange,
     onImportWords,
     onUseExample,
@@ -21,7 +25,7 @@ export default function WordsListScreen() {
       <header>
         <h1 style={{ fontSize: 26 }}>Теми та слова</h1>
         <p style={{ margin: "8px 0 0", color: "var(--text-dim)", fontSize: 14, lineHeight: 1.5 }}>
-          Оберіть тему або додайте нові слова JSON-форматом.
+          Оберіть тему, додайте нові слова або видаліть тему разом із усім прогресом.
         </p>
       </header>
 
@@ -96,30 +100,64 @@ export default function WordsListScreen() {
         )}
       </section>
 
+      {deleteMessage && (
+        <p style={{ margin: 0, color: "var(--good)", fontSize: 14, whiteSpace: "pre-wrap" }}>{deleteMessage}</p>
+      )}
+      {deleteError && (
+        <p style={{ margin: 0, color: "var(--bad)", fontSize: 14, whiteSpace: "pre-wrap" }}>{deleteError}</p>
+      )}
+
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {topics.map((topic) => (
-          <button
+          <div
             key={topic.topicId}
-            onClick={() => onOpenTopic(topic.topicId)}
             style={{
-              textAlign: "left",
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius-m)",
-              padding: "14px 16px",
-              color: "var(--text)",
+              display: "flex",
+              gap: 10,
+              alignItems: "stretch",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <div style={{ fontWeight: 700, fontSize: 16 }}>{topic.name}</div>
-              <div className="mono" style={{ fontSize: 12, color: "var(--text-faint)" }}>
-                {topic.wordCount} слів
+            <button
+              onClick={() => onOpenTopic(topic.topicId)}
+              style={{
+                flex: 1,
+                textAlign: "left",
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--radius-m)",
+                padding: "14px 16px",
+                color: "var(--text)",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <div style={{ fontWeight: 700, fontSize: 16 }}>{topic.name}</div>
+                <div className="mono" style={{ fontSize: 12, color: "var(--text-faint)" }}>
+                  {topic.wordCount} слів
+                </div>
               </div>
-            </div>
-            <div style={{ marginTop: 6, fontSize: 13, color: "var(--text-dim)" }}>
-              Черга вправ · mastery · FSRS
-            </div>
-          </button>
+              <div style={{ marginTop: 6, fontSize: 13, color: "var(--text-dim)" }}>
+                Черга вправ · mastery · FSRS
+              </div>
+            </button>
+            <button
+              onClick={() => void onDeleteTopic(topic)}
+              disabled={deletingTopicId === topic.topicId}
+              aria-label={`Видалити тему ${topic.name}`}
+              style={{
+                flexShrink: 0,
+                padding: "0 14px",
+                borderRadius: "var(--radius-m)",
+                background: "var(--surface-alt)",
+                border: "1px solid var(--border)",
+                color: "var(--bad)",
+                fontWeight: 700,
+                fontSize: 13,
+                opacity: deletingTopicId === topic.topicId ? 0.6 : 1,
+              }}
+            >
+              {deletingTopicId === topic.topicId ? "…" : "Видалити"}
+            </button>
+          </div>
         ))}
       </div>
     </div>
