@@ -18,6 +18,8 @@ export interface TypedExerciseTask {
   wordId: string;
   prompt: string;
   expectedTerm: string;
+  /** Ukrainian translation shown as a hint in context exercises. */
+  translationHint?: string;
 }
 
 export type ExerciseTask = ChoiceExerciseTask | TypedExerciseTask;

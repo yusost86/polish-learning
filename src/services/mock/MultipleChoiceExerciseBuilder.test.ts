@@ -5,6 +5,7 @@ import { isContextExerciseTask, isProductionExerciseTask } from "../../domain/mo
 import {
   buildContextTask,
   buildProductionTask,
+  buildContextPrompt,
   gradeForeignTermAnswer,
   maskForeignTerm,
 } from "./ContextExerciseBuilder";
@@ -43,13 +44,27 @@ describe("ContextExerciseBuilder", () => {
     expect(maskForeignTerm("jabłko")).toBe("ja_ł_o");
   });
 
-  it("builds context task from masked PL term", () => {
-    const word = getMockWordsByTopic("food")[0];
+  it("builds context task from masked PL term in a sentence", () => {
+    const word = { ...getMockWordsByTopic("food")[0], contextSentence: "To jest ______." };
     const task = buildContextTask(word);
 
     expect(isContextExerciseTask(task)).toBe(true);
     expect(task.expectedTerm).toBe(word.term);
+    expect(task.translationHint).toBe(word.translation);
     expect(task.prompt).toContain("_");
+    expect(task.prompt).toContain("To jest");
+  });
+
+  it("builds context prompt with masked term inside sentence", () => {
+    const word = {
+      id: "train-station",
+      term: "dworzec",
+      translation: "вокзал",
+      topicId: "travel",
+      contextSentence: "Jadę na ______.",
+    };
+
+    expect(buildContextPrompt(word)).toBe("Jadę na dw_r_e_.");
   });
 
   it("builds production task from UA prompt and PL answer", () => {

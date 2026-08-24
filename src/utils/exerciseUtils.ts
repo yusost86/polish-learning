@@ -24,7 +24,7 @@ export function exercisePromptLabel(type: ExerciseType): string {
     return "Введіть польське слово";
   }
   if (type === ExerciseType.Context) {
-    return "Доповніть пропущені літери";
+    return "Доповніть речення";
   }
   return "Оберіть переклад";
 }
