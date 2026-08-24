@@ -23,9 +23,6 @@ export function exercisePromptLabel(type: ExerciseType): string {
   if (type === ExerciseType.Production) {
     return "Введіть польське слово";
   }
-  if (type === ExerciseType.Context) {
-    return "Доповніть речення";
-  }
   return "Оберіть переклад";
 }
 
