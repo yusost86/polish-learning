@@ -180,7 +180,12 @@ export function GameSessionView({
 
       {task && isContextExerciseTask(task) && (
         <>
-          <PromptCard label={promptLabel} prompt={task.prompt} isMaskedWord />
+          <PromptCard
+            label={promptLabel}
+            prompt={task.prompt}
+            hint={task.translationHint}
+            isMaskedWord
+          />
           <TypeInExerciseView
             value={typedAnswer}
             disabled={phase === "feedback"}

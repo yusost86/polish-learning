@@ -2,6 +2,8 @@ import type { Word } from "../../domain/models/Word";
 import { ExerciseType } from "../../domain/enums/ExerciseType";
 import type { TypedExerciseTask } from "../../domain/models/ExerciseTask";
 
+const CONTEXT_BLANK = "______";
+
 export function gradeForeignTermAnswer(expectedTerm: string, answer: string): boolean {
   return (
     expectedTerm.trim().toLocaleLowerCase("pl-PL") === answer.trim().toLocaleLowerCase("pl-PL")
@@ -24,12 +26,23 @@ export function maskForeignTerm(term: string): string {
     .join("");
 }
 
+export function buildContextPrompt(word: Word): string {
+  const maskedTerm = maskForeignTerm(word.term);
+
+  if (word.contextSentence?.includes(CONTEXT_BLANK)) {
+    return word.contextSentence.replace(CONTEXT_BLANK, maskedTerm);
+  }
+
+  return maskedTerm;
+}
+
 export function buildContextTask(word: Word): TypedExerciseTask {
   return {
     exerciseType: ExerciseType.Context,
     wordId: word.id,
-    prompt: maskForeignTerm(word.term),
+    prompt: buildContextPrompt(word),
     expectedTerm: word.term,
+    translationHint: word.translation,
   };
 }
 
