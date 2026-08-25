@@ -14,6 +14,7 @@ export interface TopicStatViewModel {
   learned: number;
   due: number;
   new: number;
+  learnable: number;
   progressPct: number;
   primaryAction: TopicPrimaryAction;
 }

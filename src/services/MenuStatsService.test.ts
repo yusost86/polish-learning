@@ -5,7 +5,12 @@ import { createEmptyWordProgress } from "../domain/models/WordProgress";
 import { InMemoryLearningRepository } from "../repositories/InMemoryLearningRepository";
 import { createInitialCard } from "./FsrsService";
 import { calculateMenuStats } from "./MenuStatsService";
-import { ALL_SCENARIO_WORDS, SCENARIO_NOW, SCENARIO_STUDENT_ID } from "../test/fixtures/scenarioWords";
+import {
+  ALL_SCENARIO_WORDS,
+  SCENARIO_NOW,
+  SCENARIO_STUDENT_ID,
+  TRAVEL_WORDS,
+} from "../test/fixtures/scenarioWords";
 
 describe("MenuStatsService", () => {
   it("counts all unlocked words as new on cold start", async () => {
@@ -17,6 +22,36 @@ describe("MenuStatsService", () => {
     expect(stats.learnedWordsCount).toBe(0);
     expect(stats.dueNowCount).toBe(0);
     expect(stats.topics).toHaveLength(3);
+  });
+
+  it("counts learnable words as New and Learning only", async () => {
+    const repo = new InMemoryLearningRepository(ALL_SCENARIO_WORDS);
+    const now = SCENARIO_NOW;
+
+    const learning = createEmptyWordProgress(SCENARIO_STUDENT_ID, "airport", now, createInitialCard(now));
+    learning.state = WordState.Learning;
+    learning.totalAttempts = 2;
+    learning.recognition.mastery = 0.3;
+    repo.seedProgress(learning);
+
+    const consolidating = createEmptyWordProgress(
+      SCENARIO_STUDENT_ID,
+      "boarding-pass",
+      now,
+      createInitialCard(now),
+    );
+    consolidating.state = WordState.Consolidating;
+    consolidating.totalAttempts = 3;
+    consolidating.recognition.mastery = 0.5;
+    consolidating.recall.mastery = 0.45;
+    consolidating.production.mastery = 0.4;
+    consolidating.context.mastery = 0.35;
+    repo.seedProgress(consolidating);
+
+    const stats = await calculateMenuStats(repo, SCENARIO_STUDENT_ID, now);
+    const travel = stats.topics.find((topic) => topic.topicId === "travel");
+
+    expect(travel?.learnable).toBe(TRAVEL_WORDS.length - 1);
   });
 
   it("tracks learned and due words from progress", async () => {

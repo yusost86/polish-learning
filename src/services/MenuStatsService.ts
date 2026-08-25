@@ -11,19 +11,22 @@ interface WordCounts {
   learned: number;
   due: number;
   isNew: number;
+  learnable: number;
 }
 
 function countWord(progress: WordProgress | null, now: Date): WordCounts {
   if (!progress || (progress.state === WordState.New && progress.totalAttempts === 0)) {
-    return { learned: 0, due: 0, isNew: 1 };
+    return { learned: 0, due: 0, isNew: 1, learnable: 1 };
   }
 
   const mastery = calculateMastery(getSkillMasteries(progress));
   const learned = mastery >= WAVE_UNLOCK.masteryThreshold ? 1 : 0;
   const due = isReviewDue(progress.fsrsCard, now) ? 1 : 0;
   const isNew = progress.state === WordState.New ? 1 : 0;
+  const learnable =
+    progress.state === WordState.New || progress.state === WordState.Learning ? 1 : 0;
 
-  return { learned, due, isNew };
+  return { learned, due, isNew, learnable };
 }
 
 export async function calculateMenuStats(
@@ -48,6 +51,7 @@ export async function calculateMenuStats(
     let topicLearned = 0;
     let topicDue = 0;
     let topicNew = 0;
+    let topicLearnable = 0;
 
     for (const word of unlockedWords) {
       const progress = await repository.getProgress(studentId, word.id);
@@ -55,6 +59,7 @@ export async function calculateMenuStats(
       topicLearned += counts.learned;
       topicDue += counts.due;
       topicNew += counts.isNew;
+      topicLearnable += counts.learnable;
     }
 
     topics.push({
@@ -63,6 +68,7 @@ export async function calculateMenuStats(
       learned: topicLearned,
       due: topicDue,
       new: topicNew,
+      learnable: topicLearnable,
     });
 
     totalUniqueWords += unlockedWords.length;
