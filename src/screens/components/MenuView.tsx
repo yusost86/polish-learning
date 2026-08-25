@@ -10,8 +10,7 @@ interface MenuViewProps {
   error: string | null;
   appVersion: string;
   onRepeatDue: () => void;
-  onLearnTopic: (topicId: string) => void;
-  onReviewTopic: (topicId: string) => void;
+  onTopicPrimaryAction: (topicId: string, action: "learn" | "review") => void;
   onOpenTopic: (topicId: string) => void;
   onOpenStats: () => void;
   onOpenWords: () => void;
@@ -24,8 +23,7 @@ export function MenuView({
   error,
   appVersion,
   onRepeatDue,
-  onLearnTopic,
-  onReviewTopic,
+  onTopicPrimaryAction,
   onOpenTopic,
   onOpenStats,
   onOpenWords,
@@ -118,8 +116,7 @@ export function MenuView({
             <TopicCard
               key={stat.topicId}
               stat={stat}
-              onLearnNew={() => onLearnTopic(stat.topicId)}
-              onReview={() => onReviewTopic(stat.topicId)}
+              onPrimaryAction={() => onTopicPrimaryAction(stat.topicId, stat.primaryAction)}
               onOpenDetails={() => onOpenTopic(stat.topicId)}
             />
           ))}
