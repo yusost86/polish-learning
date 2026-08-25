@@ -2,12 +2,15 @@ import type { TopicStatViewModel } from "../../ui/viewModels/MenuViewModel";
 
 interface TopicCardProps {
   stat: TopicStatViewModel;
-  onLearnNew: () => void;
-  onReview: () => void;
+  onPrimaryAction: () => void;
   onOpenDetails: () => void;
 }
 
-export function TopicCard({ stat, onLearnNew, onReview, onOpenDetails }: TopicCardProps) {
+export function TopicCard({ stat, onPrimaryAction, onOpenDetails }: TopicCardProps) {
+  const isReview = stat.primaryAction === "review";
+  const label = isReview ? "Повторити" : "Вивчити";
+  const isDisabled = stat.total === 0 || (isReview && stat.due === 0);
+
   return (
     <div
       style={{
@@ -36,41 +39,23 @@ export function TopicCard({ stat, onLearnNew, onReview, onOpenDetails }: TopicCa
           {stat.learned}/{stat.total}
         </div>
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <button
-          disabled={stat.total === 0}
-          onClick={onLearnNew}
-          aria-label={`Вивчити нові: ${stat.name}`}
-          style={{
-            flex: 1,
-            padding: "10px",
-            borderRadius: "var(--radius-s)",
-            background: "var(--gold)",
-            color: "#2a1e0c",
-            fontWeight: 700,
-            fontSize: 13,
-          }}
-        >
-          Вивчити нові{stat.new > 0 ? ` (${stat.new})` : ""}
-        </button>
-        <button
-          disabled={stat.due === 0}
-          onClick={onReview}
-          aria-label={`Повторити: ${stat.name}`}
-          style={{
-            flex: 1,
-            padding: "10px",
-            borderRadius: "var(--radius-s)",
-            background: stat.due === 0 ? "var(--surface-alt)" : "var(--blue)",
-            color: stat.due === 0 ? "var(--text-faint)" : "#0d1c2b",
-            fontWeight: 700,
-            fontSize: 13,
-            cursor: stat.due === 0 ? "not-allowed" : "pointer",
-          }}
-        >
-          Повторити{stat.due > 0 ? ` (${stat.due})` : ""}
-        </button>
-      </div>
+      <button
+        disabled={isDisabled}
+        onClick={onPrimaryAction}
+        aria-label={`${label}: ${stat.name}`}
+        style={{
+          width: "100%",
+          padding: "10px",
+          borderRadius: "var(--radius-s)",
+          background: isDisabled ? "var(--surface-alt)" : isReview ? "var(--blue)" : "var(--gold)",
+          color: isDisabled ? "var(--text-faint)" : isReview ? "#0d1c2b" : "#2a1e0c",
+          fontWeight: 700,
+          fontSize: 13,
+          cursor: isDisabled ? "not-allowed" : "pointer",
+        }}
+      >
+        {label}
+      </button>
       <button
         onClick={onOpenDetails}
         style={{

@@ -5,6 +5,8 @@ export interface MenuSummary {
   dueNowCount: number;
 }
 
+export type TopicPrimaryAction = "learn" | "review";
+
 export interface TopicStatViewModel {
   topicId: string;
   name: string;
@@ -12,6 +14,8 @@ export interface TopicStatViewModel {
   learned: number;
   due: number;
   new: number;
+  progressPct: number;
+  primaryAction: TopicPrimaryAction;
 }
 
 export interface MenuViewModel {

@@ -9,8 +9,7 @@ export default function MenuScreen() {
     error,
     appVersion,
     onRepeatDue,
-    onLearnTopic,
-    onReviewTopic,
+    onTopicPrimaryAction,
     onOpenTopic,
     onOpenStats,
     onOpenWords,
@@ -24,8 +23,7 @@ export default function MenuScreen() {
       error={error}
       appVersion={appVersion}
       onRepeatDue={onRepeatDue}
-      onLearnTopic={onLearnTopic}
-      onReviewTopic={onReviewTopic}
+      onTopicPrimaryAction={onTopicPrimaryAction}
       onOpenTopic={onOpenTopic}
       onOpenStats={onOpenStats}
       onOpenWords={onOpenWords}

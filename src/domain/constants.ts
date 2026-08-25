@@ -20,6 +20,8 @@ export const WAVE_UNLOCK = {
   maxCriticalRatio: 0.2,
 } as const;
 
+export const TOPIC_REVIEW_THRESHOLD_PCT = 90;
+
 export const QUEUE_SLOTS = {
   critical: 2,
   due: 3,
