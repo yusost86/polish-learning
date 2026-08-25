@@ -21,6 +21,7 @@ export function toTopicStatViewModel(topic: TopicMenuStats): TopicStatViewModel 
     learned: topic.learned,
     due: topic.due,
     new: topic.new,
+    learnable: topic.learnable,
     progressPct,
     primaryAction: getTopicPrimaryAction(progressPct),
   };

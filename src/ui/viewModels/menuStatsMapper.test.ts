@@ -38,6 +38,7 @@ describe("menuStatsMapper", () => {
         learned: 8,
         due: 2,
         new: 1,
+        learnable: 3,
       });
 
       expect(viewModel).toMatchObject({
@@ -47,6 +48,7 @@ describe("menuStatsMapper", () => {
         learned: 8,
         due: 2,
         new: 1,
+        learnable: 3,
         progressPct: 80,
         primaryAction: "learn",
       });
@@ -59,6 +61,7 @@ describe("menuStatsMapper", () => {
         learned: 9,
         due: 1,
         new: 0,
+        learnable: 0,
       });
 
       expect(viewModel.progressPct).toBe(90);

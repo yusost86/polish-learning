@@ -4,6 +4,7 @@ export interface TopicMenuStats {
   learned: number;
   due: number;
   new: number;
+  learnable: number;
 }
 
 export interface MenuStats {

@@ -2,6 +2,14 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { DEFAULT_STUDENT_ID } from "../data/wordCatalog";
+import { db } from "../db/database";
+import { WordState } from "../domain/enums/WordState";
+import { createEmptyWordProgress } from "../domain/models/WordProgress";
+import { DexieLearningRepository } from "../repositories/DexieLearningRepository";
+import { serializeWordProgress } from "../repositories/progressMapper";
+import { createInitialCard } from "../services/FsrsService";
+import { getUnlockedTopicWords } from "../services/WaveManager";
 import GameScreen from "./GameScreen";
 import MenuScreen from "./MenuScreen";
 import StatisticsScreen from "./StatisticsScreen";
@@ -48,6 +56,47 @@ describe("MenuScreen", () => {
     await waitFor(() => expect(screen.getByText("Розпізнавання")).toBeInTheDocument());
     expect(screen.getByText(/Вивчити нові/)).toBeInTheDocument();
     expect(screen.getByText("przystawka")).toBeInTheDocument();
+  });
+
+  it("disables learn when topic has no New or Learning words", async () => {
+    const now = new Date("2026-08-25T12:00:00.000Z");
+    const repo = new DexieLearningRepository();
+    await repo.initialize();
+    const unlockedTravel = getUnlockedTopicWords(
+      await repo.getTopicWords("travel"),
+      await repo.getUnlockedWaveCount(DEFAULT_STUDENT_ID, "travel"),
+    );
+    const matureWords = unlockedTravel.slice(0, 4);
+    const consolidatingWords = unlockedTravel.slice(4);
+
+    for (const word of matureWords) {
+      const progress = createEmptyWordProgress(DEFAULT_STUDENT_ID, word.id, now, createInitialCard(now));
+      progress.state = WordState.Mature;
+      progress.totalAttempts = 5;
+      progress.recognition.mastery = 0.9;
+      progress.recall.mastery = 0.85;
+      progress.production.mastery = 0.8;
+      progress.context.mastery = 0.75;
+      await db.studentWordProgress.put(serializeWordProgress(progress));
+    }
+
+    for (const word of consolidatingWords) {
+      const progress = createEmptyWordProgress(DEFAULT_STUDENT_ID, word.id, now, createInitialCard(now));
+      progress.state = WordState.Consolidating;
+      progress.totalAttempts = 3;
+      progress.recognition.mastery = 0.5;
+      progress.recall.mastery = 0.45;
+      progress.production.mastery = 0.4;
+      progress.context.mastery = 0.35;
+      await db.studentWordProgress.put(serializeWordProgress(progress));
+    }
+
+    renderApp();
+    const learnButton = await screen.findByRole("button", { name: "Вивчити: Подорожі" });
+    expect(learnButton).toBeDisabled();
+    fireEvent.click(learnButton);
+    expect(screen.getByText("Словник")).toBeInTheDocument();
+    expect(screen.queryByText("Сесію завершено")).not.toBeInTheDocument();
   });
 
   it("opens stats and words stubs and returns home", async () => {
