@@ -1,4 +1,4 @@
-import { QUEUE_SLOTS } from "../domain/constants";
+import { QUEUE_SLOTS, WAVE_UNLOCK } from "../domain/constants";
 import { SelectionReason } from "../domain/enums/SelectionReason";
 import { SkillType } from "../domain/enums/SkillType";
 import { WordState } from "../domain/enums/WordState";
@@ -266,6 +266,21 @@ function pickLearnFallback(
   }));
 }
 
+function pickLearnFallbackNotLearned(
+  pool: QueueCandidate[],
+  used: Set<string>,
+  count: number,
+): { candidate: QueueCandidate; reason: SelectionReason }[] {
+  return sortByPriorityDesc(
+    pool.filter((c) => !used.has(c.word.id) && c.mastery < WAVE_UNLOCK.masteryThreshold),
+  )
+    .slice(0, count)
+    .map((candidate) => ({
+      candidate,
+      reason: SelectionReason.Learning,
+    }));
+}
+
 function buildNewSessionQueue(
   topicCandidates: QueueCandidate[],
   exerciseSelector: ExerciseSelector,
@@ -313,6 +328,13 @@ function buildNewSessionQueue(
 
   if (queue.length === 0) {
     for (const pick of pickLearnFallback(topicCandidates, used, now, queueLimit)) {
+      queue.push(pick);
+      used.add(pick.candidate.word.id);
+    }
+  }
+
+  if (queue.length === 0) {
+    for (const pick of pickLearnFallbackNotLearned(topicCandidates, used, queueLimit)) {
       queue.push(pick);
       used.add(pick.candidate.word.id);
     }
