@@ -129,6 +129,74 @@ describe("ReviewQueueBuilder", () => {
     expect(queue.filter((item) => item.word.topicId === "daily-life").length).toBeGreaterThan(0);
   });
 
+  it("new session mode uses fallback when only consolidating words are not yet due", () => {
+    const progressByWordId = new Map<string, ReturnType<typeof createEmptyWordProgress>>();
+
+    for (const word of TRAVEL_WORDS) {
+      const progress = createEmptyWordProgress(SCENARIO_STUDENT_ID, word.id, now, createInitialCard(now));
+      progress.state = WordState.Consolidating;
+      progress.totalAttempts = 3;
+      progress.recognition.mastery = 0.5;
+      progress.recall.mastery = 0.45;
+      progress.production.mastery = 0.4;
+      progress.context.mastery = 0.35;
+      progress.fsrsCard = {
+        ...progress.fsrsCard,
+        due: new Date("2026-09-01T12:00:00.000Z"),
+        state: 2,
+        reps: 1,
+      };
+      progressByWordId.set(word.id, progress);
+    }
+
+    const queue = builder.build({
+      topicId: "travel",
+      topicWords: TRAVEL_WORDS,
+      allWords: TRAVEL_WORDS,
+      progressByWordId,
+      now,
+      sessionMode: "new",
+    });
+
+    expect(queue.length).toBeGreaterThan(0);
+    expect(queue.length).toBeLessThanOrEqual(QUEUE_SLOTS.total);
+    expect(queue.every((item) => item.reason === SelectionReason.Learning)).toBe(true);
+  });
+
+  it("new session mode does not use fallback when New or Learning words exist", () => {
+    const progressByWordId = new Map<string, ReturnType<typeof createEmptyWordProgress>>();
+
+    for (const [index, word] of TRAVEL_WORDS.entries()) {
+      const progress = createEmptyWordProgress(SCENARIO_STUDENT_ID, word.id, now, createInitialCard(now));
+      if (index === 0) {
+        progressByWordId.set(word.id, progress);
+        continue;
+      }
+      progress.state = WordState.Consolidating;
+      progress.totalAttempts = 3;
+      progress.fsrsCard = {
+        ...progress.fsrsCard,
+        due: new Date("2026-09-01T12:00:00.000Z"),
+        state: 2,
+        reps: 1,
+      };
+      progressByWordId.set(word.id, progress);
+    }
+
+    const queue = builder.build({
+      topicId: "travel",
+      topicWords: TRAVEL_WORDS,
+      allWords: TRAVEL_WORDS,
+      progressByWordId,
+      now,
+      sessionMode: "new",
+    });
+
+    expect(queue).toHaveLength(1);
+    expect(queue[0]?.reason).toBe(SelectionReason.NewWord);
+    expect(queue[0]?.word.id).toBe("airport");
+  });
+
   it("new session mode prioritizes new and learning words only", () => {
     const progressByWordId = new Map(
       TRAVEL_WORDS.map((word) => [

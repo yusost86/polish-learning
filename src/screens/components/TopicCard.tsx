@@ -9,10 +9,7 @@ interface TopicCardProps {
 export function TopicCard({ stat, onPrimaryAction, onOpenDetails }: TopicCardProps) {
   const isReview = stat.primaryAction === "review";
   const label = isReview ? "Повторити" : "Вивчити";
-  const isDisabled =
-    stat.total === 0 ||
-    (isReview && stat.due === 0) ||
-    (!isReview && stat.learnable === 0);
+  const isDisabled = stat.total === 0 || (isReview && stat.due === 0);
 
   return (
     <div
