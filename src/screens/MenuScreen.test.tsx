@@ -58,7 +58,7 @@ describe("MenuScreen", () => {
     expect(screen.getByText("przystawka")).toBeInTheDocument();
   });
 
-  it("disables learn when topic has no New or Learning words", async () => {
+  it("keeps learn enabled and opens fallback session when only consolidating words remain", async () => {
     const now = new Date("2026-08-25T12:00:00.000Z");
     const repo = new DexieLearningRepository();
     await repo.initialize();
@@ -77,6 +77,12 @@ describe("MenuScreen", () => {
       progress.recall.mastery = 0.85;
       progress.production.mastery = 0.8;
       progress.context.mastery = 0.75;
+      progress.fsrsCard = {
+        ...progress.fsrsCard,
+        due: new Date("2026-09-01T12:00:00.000Z"),
+        state: 2,
+        reps: 2,
+      };
       await db.studentWordProgress.put(serializeWordProgress(progress));
     }
 
@@ -88,15 +94,22 @@ describe("MenuScreen", () => {
       progress.recall.mastery = 0.45;
       progress.production.mastery = 0.4;
       progress.context.mastery = 0.35;
+      progress.fsrsCard = {
+        ...progress.fsrsCard,
+        due: new Date("2026-09-01T12:00:00.000Z"),
+        state: 2,
+        reps: 1,
+      };
       await db.studentWordProgress.put(serializeWordProgress(progress));
     }
 
     renderApp();
     const learnButton = await screen.findByRole("button", { name: "Вивчити: Подорожі" });
-    expect(learnButton).toBeDisabled();
+    expect(learnButton).not.toBeDisabled();
     fireEvent.click(learnButton);
-    expect(screen.getByText("Словник")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Вивчити нові/)).toBeInTheDocument());
     expect(screen.queryByText("Сесію завершено")).not.toBeInTheDocument();
+    expect(screen.queryByText("0 вправи")).not.toBeInTheDocument();
   });
 
   it("opens stats and words stubs and returns home", async () => {

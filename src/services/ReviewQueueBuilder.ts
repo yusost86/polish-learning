@@ -239,10 +239,38 @@ function toQueueItems(
   }));
 }
 
+function pickLearnFallback(
+  pool: QueueCandidate[],
+  used: Set<string>,
+  now: Date,
+  count: number,
+): { candidate: QueueCandidate; reason: SelectionReason }[] {
+  const candidates = pool.filter(
+    (c) =>
+      !used.has(c.word.id) &&
+      c.progress.state !== WordState.New &&
+      !isReviewDue(c.progress.fsrsCard, now),
+  );
+
+  const sorted = [...candidates].sort((a, b) => {
+    const priorityDiff = b.priority.score - a.priority.score;
+    if (priorityDiff !== 0) {
+      return priorityDiff;
+    }
+    return a.progress.fsrsCard.due.getTime() - b.progress.fsrsCard.due.getTime();
+  });
+
+  return sorted.slice(0, count).map((candidate) => ({
+    candidate,
+    reason: SelectionReason.Learning,
+  }));
+}
+
 function buildNewSessionQueue(
   topicCandidates: QueueCandidate[],
   exerciseSelector: ExerciseSelector,
   queueLimit: number,
+  now: Date,
 ): LearningQueueItem[] {
   const allNew =
     topicCandidates.length > 0 &&
@@ -268,6 +296,7 @@ function buildNewSessionQueue(
 
   for (const pick of pickNewOrLearning(topicCandidates, used, queueLimit)) {
     queue.push(pick);
+    used.add(pick.candidate.word.id);
   }
 
   if (queue.length < queueLimit) {
@@ -278,6 +307,14 @@ function buildNewSessionQueue(
     );
     for (const candidate of fillRemaining(learningPool, used, queueLimit - queue.length)) {
       queue.push({ candidate, reason: SelectionReason.Learning });
+      used.add(candidate.word.id);
+    }
+  }
+
+  if (queue.length === 0) {
+    for (const pick of pickLearnFallback(topicCandidates, used, now, queueLimit)) {
+      queue.push(pick);
+      used.add(pick.candidate.word.id);
     }
   }
 
@@ -336,7 +373,7 @@ export class ReviewQueueBuilder {
     const mixedPool = includeCrossTopicMixed ? allCandidates : topicCandidates;
 
     if (sessionMode === "new") {
-      return buildNewSessionQueue(topicCandidates, this.exerciseSelector, limit);
+      return buildNewSessionQueue(topicCandidates, this.exerciseSelector, limit, now);
     }
 
     if (sessionMode === "due") {
