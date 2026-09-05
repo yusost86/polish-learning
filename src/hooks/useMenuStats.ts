@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { DEFAULT_STUDENT_ID } from "../data/wordCatalog";
-import { initLearningEngine } from "../services/learningEngineProvider";
 import { toMenuSummary, toTopicStatViewModels } from "../ui/viewModels/menuStatsMapper";
 import type { MenuSummary, TopicStatViewModel } from "../ui/viewModels/MenuViewModel";
+import { useLearningService } from "./useLearningService";
 
 const EMPTY_SUMMARY: MenuSummary = {
   totalUniqueWords: 0,
@@ -21,6 +20,7 @@ export interface UseMenuStatsResult {
 }
 
 export function useMenuStats(): UseMenuStatsResult {
+  const service = useLearningService();
   const [summary, setSummary] = useState<MenuSummary>(EMPTY_SUMMARY);
   const [topicStats, setTopicStats] = useState<TopicStatViewModel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,8 +30,7 @@ export function useMenuStats(): UseMenuStatsResult {
     setLoading(true);
     setError(null);
     try {
-      const engine = await initLearningEngine();
-      const stats = await engine.getMenuStats(DEFAULT_STUDENT_ID);
+      const stats = await service.getMenuStats();
       setSummary(toMenuSummary(stats));
       setTopicStats(toTopicStatViewModels(stats));
     } catch (err) {
@@ -41,7 +40,7 @@ export function useMenuStats(): UseMenuStatsResult {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [service]);
 
   useEffect(() => {
     void load();

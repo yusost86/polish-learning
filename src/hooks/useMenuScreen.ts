@@ -36,5 +36,3 @@ export function useMenuScreen(): UseMenuScreenResult {
     onRefresh: refresh,
   };
 }
-
-export { getTopicName } from "../data/wordCatalog";

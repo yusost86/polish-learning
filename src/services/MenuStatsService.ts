@@ -35,6 +35,7 @@ export async function calculateMenuStats(
   now: Date,
 ): Promise<MenuStats> {
   const allWords = await repository.getAllWords();
+  const topicNames = await repository.getTopicNames();
   const topicIds = [...new Set(allWords.map((word) => word.topicId))];
   const topics: TopicMenuStats[] = [];
 
@@ -64,6 +65,7 @@ export async function calculateMenuStats(
 
     topics.push({
       topicId,
+      name: topicNames[topicId] ?? topicId,
       total: unlockedWords.length,
       learned: topicLearned,
       due: topicDue,

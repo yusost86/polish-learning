@@ -4,7 +4,6 @@ import {
   isContextExerciseTask,
   isProductionExerciseTask,
 } from "../../domain/models/ExerciseTask";
-import { getTopicName } from "../../data/wordCatalog";
 import type { SessionPhase } from "../../ui/viewModels/GameTaskViewModel";
 import { exercisePromptLabel, exerciseTypeTitle } from "../../utils/exerciseUtils";
 import { AnswerFeedback } from "./AnswerFeedback";
@@ -18,7 +17,7 @@ interface GameSessionViewProps {
   task: ExerciseTask | null;
   progress: { current: number; total: number };
   modeLabel: string;
-  topicId?: string;
+  topicName?: string;
   selectedChoiceId: string | null;
   typedAnswer: string;
   isCorrect: boolean | null;
@@ -37,7 +36,7 @@ export function GameSessionView({
   task,
   progress,
   modeLabel,
-  topicId,
+  topicName,
   selectedChoiceId,
   typedAnswer,
   isCorrect,
@@ -50,7 +49,7 @@ export function GameSessionView({
   onRetry,
   loadError,
 }: GameSessionViewProps) {
-  const topicLabel = topicId ? ` · ${getTopicName(topicId)}` : "";
+  const topicLabel = topicName ? ` · ${topicName}` : "";
 
   if (phase === "loading") {
     return (

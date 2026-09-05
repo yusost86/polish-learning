@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { DEFAULT_STUDENT_ID } from "../data/wordCatalog";
+import { DEFAULT_STUDENT_ID } from "../data/catalogSeed";
 import { db } from "../db/database";
 import { WordState } from "../domain/enums/WordState";
 import { createEmptyWordProgress } from "../domain/models/WordProgress";
@@ -10,6 +10,8 @@ import { DexieLearningRepository } from "../repositories/DexieLearningRepository
 import { serializeWordProgress } from "../repositories/progressMapper";
 import { createInitialCard } from "../services/FsrsService";
 import { getUnlockedTopicWords } from "../services/WaveManager";
+import { LearningServiceProvider } from "../ui/providers/LearningServiceProvider";
+import { testLearningService } from "../test/learningServiceTestUtils";
 import GameScreen from "./GameScreen";
 import MenuScreen from "./MenuScreen";
 import StatisticsScreen from "./StatisticsScreen";
@@ -65,16 +67,18 @@ async function seedTravelConsolidatingDueSession(now: Date, dueDate: Date): Prom
 
 function renderApp(initialEntry = "/") {
   return render(
-    <MemoryRouter initialEntries={[initialEntry]}>
-      <Routes>
-        <Route path="/" element={<MenuScreen />} />
-        <Route path="/game/:topicId" element={<GameScreen />} />
-        <Route path="/game" element={<GameScreen />} />
-        <Route path="/topic/:topicId" element={<TopicOverviewScreen />} />
-        <Route path="/stats" element={<StatisticsScreen />} />
-        <Route path="/words" element={<WordsListScreen />} />
-      </Routes>
-    </MemoryRouter>,
+    <LearningServiceProvider service={testLearningService}>
+      <MemoryRouter initialEntries={[initialEntry]}>
+        <Routes>
+          <Route path="/" element={<MenuScreen />} />
+          <Route path="/game/:topicId" element={<GameScreen />} />
+          <Route path="/game" element={<GameScreen />} />
+          <Route path="/topic/:topicId" element={<TopicOverviewScreen />} />
+          <Route path="/stats" element={<StatisticsScreen />} />
+          <Route path="/words" element={<WordsListScreen />} />
+        </Routes>
+      </MemoryRouter>
+    </LearningServiceProvider>,
   );
 }
 
@@ -163,14 +167,16 @@ describe("GameScreen", () => {
     await waitFor(() => expect(screen.getByText("przystawka")).toBeInTheDocument());
 
     fireEvent.click(screen.getByRole("button", { name: "закуска" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Далі" })).toBeInTheDocument());
     fireEvent.click(screen.getByRole("button", { name: "Далі" }));
 
     await waitFor(() => expect(screen.queryByText("przystawka")).not.toBeInTheDocument());
 
-    const { initLearningEngine } = await import("../services/learningEngineProvider");
-    const engine = await initLearningEngine();
-    const progress = await engine.getWordProgress("student-1", "appetizer");
-    expect(progress.totalAttempts).toBe(1);
+    const repo = new DexieLearningRepository();
+    await repo.initialize();
+    const progress = await repo.getProgress("student-1", "appetizer");
+    expect(progress).not.toBeNull();
+    expect(progress!.totalAttempts).toBe(1);
   });
 
   it("shows empty state without mode", () => {

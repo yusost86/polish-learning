@@ -1,25 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { DEFAULT_STUDENT_ID } from "../data/wordCatalog";
-import { getCachedWords } from "../data/catalogProvider";
-import type { Word } from "../domain/models/Word";
 import type { ExerciseTask } from "../domain/models/ExerciseTask";
-import type { LearningQueueItem } from "../domain/models/LearningQueueItem";
 import { isChoiceExerciseTask, isTypedExerciseTask } from "../domain/models/ExerciseTask";
-import { buildTaskFromQueueItem } from "../services/exerciseTaskBuilder";
-import { initLearningEngine } from "../services/learningEngineProvider";
-import { gradeForeignTermAnswer } from "../services/mock/ContextExerciseBuilder";
-import {
-  getCorrectChoiceLabel,
-  gradeChoiceExercise,
-} from "../services/mock/MultipleChoiceExerciseBuilder";
 import type { SessionPhase } from "../ui/viewModels/GameTaskViewModel";
 import type { SessionMode } from "../domain/enums/SessionMode";
-import { sessionModeLabel } from "../utils/sessionUtils";
+import { useLearningService } from "./useLearningService";
 
 export interface UseExerciseSessionParams {
   mode?: SessionMode;
   topicId?: string;
+  enabled?: boolean;
   onBack: () => void;
 }
 
@@ -32,6 +22,7 @@ export interface UseExerciseSessionResult {
   isCorrect: boolean | null;
   correctAnswerLabel: string;
   modeLabel: string;
+  topicName: string;
   loadError: string | null;
   onSelectAnswer: (choiceId: string) => void;
   onTypedAnswerChange: (value: string) => void;
@@ -56,10 +47,12 @@ function resetAnswerState(
 export function useExerciseSession({
   mode,
   topicId,
+  enabled = true,
   onBack,
 }: UseExerciseSessionParams): UseExerciseSessionResult {
-  const [queue, setQueue] = useState<LearningQueueItem[]>([]);
-  const [wordPool, setWordPool] = useState<Word[]>(() => getCachedWords());
+  const service = useLearningService();
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [tasks, setTasks] = useState<ExerciseTask[]>([]);
   const [taskIndex, setTaskIndex] = useState(0);
   const [phase, setPhase] = useState<SessionPhase>("loading");
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -68,14 +61,21 @@ export function useExerciseSession({
   const [typedAnswer, setTypedAnswer] = useState("");
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [correctAnswerLabel, setCorrectAnswerLabel] = useState("");
+  const [modeLabel, setModeLabel] = useState("");
+  const [topicName, setTopicName] = useState("");
   const answerStartedAtRef = useRef(Date.now());
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadSession() {
+      if (!enabled) {
+        return;
+      }
+
       if (!mode) {
-        setQueue([]);
+        setSessionId(null);
+        setTasks([]);
         setLoadError(null);
         setPhase("complete");
         return;
@@ -84,21 +84,23 @@ export function useExerciseSession({
       setPhase("loading");
       setLoadError(null);
       try {
-        const engine = await initLearningEngine();
-        const tasks = await engine.getNextTasks(DEFAULT_STUDENT_ID, { topicId, mode });
+        const result = await service.startSession({ mode, topicId });
 
         if (cancelled) {
           return;
         }
 
-        setQueue(tasks);
-        setWordPool(getCachedWords());
+        setSessionId(result.sessionId);
+        setTasks(result.tasks);
+        setModeLabel(result.modeLabel);
+        setTopicName(result.topicName);
         setTaskIndex(0);
-        setPhase(tasks.length > 0 ? "exercise" : "complete");
+        setPhase(result.tasks.length > 0 ? "exercise" : "complete");
         answerStartedAtRef.current = Date.now();
       } catch (err) {
         if (!cancelled) {
-          setQueue([]);
+          setSessionId(null);
+          setTasks([]);
           setLoadError(err instanceof Error ? err.message : "Не вдалося завантажити сесію");
           setPhase("error");
         }
@@ -109,16 +111,9 @@ export function useExerciseSession({
     return () => {
       cancelled = true;
     };
-  }, [mode, topicId, retryCount]);
+  }, [mode, topicId, retryCount, service, enabled]);
 
-  const currentItem = queue[taskIndex] ?? null;
-
-  const task = useMemo(() => {
-    if (!currentItem) {
-      return null;
-    }
-    return buildTaskFromQueueItem(currentItem, wordPool);
-  }, [currentItem, wordPool]);
+  const task = useMemo(() => tasks[taskIndex] ?? null, [tasks, taskIndex]);
 
   useEffect(() => {
     if (phase === "exercise") {
@@ -126,48 +121,45 @@ export function useExerciseSession({
     }
   }, [phase, taskIndex, task]);
 
-  const persistAnswer = useCallback(
-    async (correct: boolean) => {
-      if (!currentItem) {
+  const onSelectAnswer = useCallback(
+    async (choiceId: string) => {
+      if (phase !== "exercise" || !task || !isChoiceExerciseTask(task) || !sessionId) {
         return;
       }
-      const engine = await initLearningEngine();
-      await engine.submitAnswer({
-        studentId: DEFAULT_STUDENT_ID,
-        wordId: currentItem.word.id,
-        exerciseType: currentItem.exercise,
-        correct,
+      setSelectedChoiceId(choiceId);
+      const result = await service.submitAnswer({
+        sessionId,
+        taskIndex,
+        answer: { type: "choice", choiceId },
         responseTimeMs: Date.now() - answerStartedAtRef.current,
       });
-    },
-    [currentItem],
-  );
-
-  const onSelectAnswer = useCallback(
-    (choiceId: string) => {
-      if (phase !== "exercise" || !task || !isChoiceExerciseTask(task)) {
-        return;
-      }
-      const correct = gradeChoiceExercise(task, choiceId);
-      setSelectedChoiceId(choiceId);
-      setIsCorrect(correct);
-      setCorrectAnswerLabel(getCorrectChoiceLabel(task));
+      setIsCorrect(result.isCorrect);
+      setCorrectAnswerLabel(result.correctAnswerLabel);
       setPhase("feedback");
-      void persistAnswer(correct);
     },
-    [phase, task, persistAnswer],
+    [phase, task, sessionId, taskIndex, service],
   );
 
-  const onSubmitTypedAnswer = useCallback(() => {
-    if (phase !== "exercise" || !task || !isTypedExerciseTask(task) || !typedAnswer.trim()) {
+  const onSubmitTypedAnswer = useCallback(async () => {
+    if (
+      phase !== "exercise" ||
+      !task ||
+      !isTypedExerciseTask(task) ||
+      !typedAnswer.trim() ||
+      !sessionId
+    ) {
       return;
     }
-    const correct = gradeForeignTermAnswer(task.expectedTerm, typedAnswer);
-    setIsCorrect(correct);
-    setCorrectAnswerLabel(task.expectedTerm);
+    const result = await service.submitAnswer({
+      sessionId,
+      taskIndex,
+      answer: { type: "typed", text: typedAnswer },
+      responseTimeMs: Date.now() - answerStartedAtRef.current,
+    });
+    setIsCorrect(result.isCorrect);
+    setCorrectAnswerLabel(result.correctAnswerLabel);
     setPhase("feedback");
-    void persistAnswer(correct);
-  }, [phase, task, typedAnswer, persistAnswer]);
+  }, [phase, task, typedAnswer, sessionId, taskIndex, service]);
 
   const onContinue = useCallback(() => {
     if (phase !== "feedback") {
@@ -175,7 +167,7 @@ export function useExerciseSession({
     }
 
     const nextIndex = taskIndex + 1;
-    if (nextIndex >= queue.length) {
+    if (nextIndex >= tasks.length) {
       setPhase("complete");
       return;
     }
@@ -183,7 +175,7 @@ export function useExerciseSession({
     setTaskIndex(nextIndex);
     resetAnswerState(setSelectedChoiceId, setTypedAnswer, setIsCorrect, setCorrectAnswerLabel);
     setPhase("exercise");
-  }, [phase, taskIndex, queue.length]);
+  }, [phase, taskIndex, tasks.length]);
 
   const onRetry = useCallback(() => {
     setRetryCount((count) => count + 1);
@@ -193,14 +185,15 @@ export function useExerciseSession({
     phase,
     task,
     progress: {
-      current: queue.length === 0 ? 0 : taskIndex + 1,
-      total: queue.length,
+      current: tasks.length === 0 ? 0 : taskIndex + 1,
+      total: tasks.length,
     },
     selectedChoiceId,
     typedAnswer,
     isCorrect,
     correctAnswerLabel,
-    modeLabel: sessionModeLabel(mode),
+    modeLabel,
+    topicName,
     loadError,
     onSelectAnswer,
     onTypedAnswerChange: setTypedAnswer,

@@ -1,4 +1,3 @@
-import { getTopicName } from "../../data/wordCatalog";
 import { TOPIC_REVIEW_THRESHOLD_PCT } from "../../domain/constants";
 import type { MenuStats } from "../../domain/models/MenuStats";
 import type { TopicMenuStats } from "../../domain/models/MenuStats";
@@ -16,7 +15,7 @@ export function toTopicStatViewModel(topic: TopicMenuStats): TopicStatViewModel 
   const progressPct = getTopicProgressPct(topic.learned, topic.total);
   return {
     topicId: topic.topicId,
-    name: getTopicName(topic.topicId),
+    name: topic.name,
     total: topic.total,
     learned: topic.learned,
     due: topic.due,

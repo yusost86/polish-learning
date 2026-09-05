@@ -1,5 +1,4 @@
 import { QUEUE_SLOTS } from "../../domain/constants";
-import { getTopicName } from "../../data/wordCatalog";
 import type { LearningQueueItem } from "../../domain/models/LearningQueueItem";
 import type { TopicOverview } from "../../domain/models/TopicOverview";
 import { exerciseTypeTitle } from "../../utils/exerciseUtils";
@@ -24,7 +23,7 @@ function toUpcomingTaskViewModel(item: LearningQueueItem, index: number): Upcomi
 export function toTopicOverviewViewModel(overview: TopicOverview): TopicOverviewViewModel {
   return {
     topicId: overview.topicId,
-    topicName: getTopicName(overview.topicId),
+    topicName: overview.topicName,
     topicProgress: overview.topicProgress,
     upcomingTasks: overview.upcomingTasks.map((item, index) => toUpcomingTaskViewModel(item, index)),
     followingTasks: overview.followingTasks.map((item, index) =>

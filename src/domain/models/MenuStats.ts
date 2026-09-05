@@ -1,5 +1,6 @@
 export interface TopicMenuStats {
   topicId: string;
+  name: string;
   total: number;
   learned: number;
   due: number;
