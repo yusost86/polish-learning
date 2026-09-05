@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { DEFAULT_STUDENT_ID, getCatalogTopics } from "../data/wordCatalog";
-import { initLearningEngine } from "../services/learningEngineProvider";
+import type { TopicListItem } from "../application/types/catalog";
+import { useLearningService } from "./useLearningService";
 
 const EXAMPLE_JSON = `[
   {
@@ -18,11 +18,7 @@ const EXAMPLE_JSON = `[
   }
 ]`;
 
-export interface WordsListTopic {
-  topicId: string;
-  name: string;
-  wordCount: number;
-}
+export type WordsListTopic = TopicListItem;
 
 export interface UseWordsListScreenResult {
   topics: WordsListTopic[];
@@ -42,8 +38,9 @@ export interface UseWordsListScreenResult {
 }
 
 export function useWordsListScreen(): UseWordsListScreenResult {
+  const service = useLearningService();
   const navigate = useNavigate();
-  const [topics, setTopics] = useState(getCatalogTopics());
+  const [topics, setTopics] = useState<WordsListTopic[]>([]);
   const [importText, setImportText] = useState("");
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
@@ -52,12 +49,13 @@ export function useWordsListScreen(): UseWordsListScreenResult {
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const refreshTopics = useCallback(() => {
-    setTopics(getCatalogTopics());
-  }, []);
+  const refreshTopics = useCallback(async () => {
+    const nextTopics = await service.getTopics();
+    setTopics(nextTopics);
+  }, [service]);
 
   useEffect(() => {
-    void initLearningEngine().then(() => refreshTopics());
+    void refreshTopics();
   }, [refreshTopics]);
 
   const onImportWords = useCallback(async () => {
@@ -65,9 +63,8 @@ export function useWordsListScreen(): UseWordsListScreenResult {
     setImportMessage(null);
     setImportError(null);
     try {
-      const engine = await initLearningEngine();
-      const result = await engine.importWords(importText);
-      refreshTopics();
+      const result = await service.importWords(importText);
+      await refreshTopics();
 
       if (result.errors.length > 0 && result.added === 0) {
         setImportError(result.errors.join("\n"));
@@ -95,7 +92,7 @@ export function useWordsListScreen(): UseWordsListScreenResult {
     } finally {
       setImporting(false);
     }
-  }, [importText, refreshTopics]);
+  }, [importText, refreshTopics, service]);
 
   const onDeleteTopic = useCallback(
     async (topic: WordsListTopic) => {
@@ -110,9 +107,8 @@ export function useWordsListScreen(): UseWordsListScreenResult {
       setDeleteMessage(null);
       setDeleteError(null);
       try {
-        const engine = await initLearningEngine();
-        const result = await engine.deleteTopic(DEFAULT_STUDENT_ID, topic.topicId);
-        refreshTopics();
+        const result = await service.deleteTopic(topic.topicId);
+        await refreshTopics();
         setDeleteMessage(`Тему «${topic.name}» видалено (${result.deletedWordCount} слів)`);
       } catch (err) {
         setDeleteError(err instanceof Error ? err.message : "Не вдалося видалити тему");
@@ -120,7 +116,7 @@ export function useWordsListScreen(): UseWordsListScreenResult {
         setDeletingTopicId(null);
       }
     },
-    [refreshTopics],
+    [refreshTopics, service],
   );
 
   return {

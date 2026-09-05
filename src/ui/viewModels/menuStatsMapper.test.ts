@@ -34,6 +34,7 @@ describe("menuStatsMapper", () => {
     it("maps topic stats with progress and primary action", () => {
       const viewModel = toTopicStatViewModel({
         topicId: "food",
+        name: "Їжа",
         total: 10,
         learned: 8,
         due: 2,
@@ -57,6 +58,7 @@ describe("menuStatsMapper", () => {
     it("switches to review at 90% progress", () => {
       const viewModel = toTopicStatViewModel({
         topicId: "food",
+        name: "Їжа",
         total: 10,
         learned: 9,
         due: 1,

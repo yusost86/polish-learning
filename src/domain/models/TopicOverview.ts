@@ -23,6 +23,7 @@ export interface TopicWordOverview {
 
 export interface TopicOverview {
   topicId: string;
+  topicName: string;
   topicProgress: TopicProgress;
   upcomingTasks: LearningQueueItem[];
   followingTasks: LearningQueueItem[];

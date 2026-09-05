@@ -272,6 +272,7 @@ export class LearningEngine {
     return {
       topicId,
       topicProgress,
+      topicName: "", // enriched by LocalLearningService
       upcomingTasks: allTasks.slice(0, QUEUE_SLOTS.total),
       followingTasks: allTasks.slice(QUEUE_SLOTS.total),
       words,

@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { DEFAULT_STUDENT_ID } from "../data/wordCatalog";
-import { initLearningEngine } from "../services/learningEngineProvider";
 import { toTopicOverviewViewModel } from "../ui/viewModels/topicOverviewMapper";
 import type { TopicOverviewViewModel } from "../ui/viewModels/TopicOverviewViewModel";
+import { useLearningService } from "./useLearningService";
 
 export interface UseTopicOverviewResult {
   topicId: string;
@@ -17,6 +16,7 @@ export interface UseTopicOverviewResult {
 }
 
 export function useTopicOverview(): UseTopicOverviewResult {
+  const service = useLearningService();
   const navigate = useNavigate();
   const { topicId = "" } = useParams();
   const [overview, setOverview] = useState<TopicOverviewViewModel | null>(null);
@@ -33,8 +33,7 @@ export function useTopicOverview(): UseTopicOverviewResult {
     setLoading(true);
     setError(null);
     try {
-      const engine = await initLearningEngine();
-      const data = await engine.getTopicOverview(DEFAULT_STUDENT_ID, topicId);
+      const data = await service.getTopicOverview(topicId);
       setOverview(toTopicOverviewViewModel(data));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не вдалося завантажити тему");
@@ -42,7 +41,7 @@ export function useTopicOverview(): UseTopicOverviewResult {
     } finally {
       setLoading(false);
     }
-  }, [topicId]);
+  }, [topicId, service]);
 
   useEffect(() => {
     void load();
