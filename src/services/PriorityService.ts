@@ -66,9 +66,3 @@ export function calculatePriorityBreakdown(
     display,
   };
 }
-
-export class PriorityService {
-  calculate(progress: WordProgress, now: Date): PriorityBreakdown {
-    return calculatePriorityBreakdown(progress, now);
-  }
-}

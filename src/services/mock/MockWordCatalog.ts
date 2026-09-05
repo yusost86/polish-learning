@@ -1,6 +1,6 @@
 import type { Word } from "../../domain/models/Word";
 
-export const MOCK_WORDS: Word[] = [
+const MOCK_WORDS: Word[] = [
   { id: "food-jablko", term: "jabłko", translation: "яблуко", topicId: "food" },
   { id: "food-chleb", term: "chleb", translation: "хліб", topicId: "food" },
   { id: "food-woda", term: "woda", translation: "вода", topicId: "food" },
@@ -14,8 +14,6 @@ export const MOCK_WORDS: Word[] = [
   { id: "travel-hotel", term: "hotel", translation: "готель", topicId: "travel" },
   { id: "travel-mapa", term: "mapa", translation: "карта", topicId: "travel" },
 ];
-
-export const KNOWN_TOPIC_IDS = new Set(MOCK_WORDS.map((word) => word.topicId));
 
 export function getMockWords(): Word[] {
   return MOCK_WORDS;

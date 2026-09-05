@@ -3,13 +3,16 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_STUDENT_ID } from "../data/wordCatalog";
 import { ExerciseType } from "../domain/enums/ExerciseType";
 import { WordState } from "../domain/enums/WordState";
-import { initLearningEngine } from "../services/learningEngineProvider";
+import { LearningEngine } from "../services/LearningEngine";
 import { DexieLearningRepository } from "./DexieLearningRepository";
 
 describe("DexieLearningRepository", () => {
   it("persists word progress across repository instances", async () => {
-    const engine = await initLearningEngine();
-    await engine.getNextTasks(DEFAULT_STUDENT_ID, "travel");
+    const repository = new DexieLearningRepository();
+    await repository.initialize();
+    const engine = new LearningEngine(repository);
+
+    await engine.getNextTasks(DEFAULT_STUDENT_ID, { topicId: "travel", mode: "new" });
     await engine.submitAnswer({
       studentId: DEFAULT_STUDENT_ID,
       wordId: "airport",

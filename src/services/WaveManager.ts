@@ -40,17 +40,13 @@ export function canOpenNextWave(
   );
 }
 
-export function getCurrentWaveIndex(allWordIds: string[], unlockedWaveCount: number): number {
-  return Math.max(0, Math.min(unlockedWaveCount - 1, Math.ceil(allWordIds.length / WAVE_SIZE) - 1));
-}
-
-export function getUnlockedWordIds(allWordIds: string[], unlockedWaveCount: number): string[] {
-  return allWordIds.slice(0, unlockedWaveCount * WAVE_SIZE);
-}
-
 export function getUnlockedTopicWords(words: Word[], waveCount: number): Word[] {
-  const unlockedIds = new Set(getUnlockedWordIds(words.map((w) => w.id), waveCount));
+  const unlockedIds = new Set(unlockedWordIds(words.map((w) => w.id), waveCount));
   return words.filter((w) => unlockedIds.has(w.id));
+}
+
+function unlockedWordIds(allWordIds: string[], unlockedWaveCount: number): string[] {
+  return allWordIds.slice(0, unlockedWaveCount * WAVE_SIZE);
 }
 
 export function countWordsByState(progressList: WordProgress[]): Record<WordState, number> {  const counts: Record<WordState, number> = {
@@ -64,14 +60,4 @@ export function countWordsByState(progressList: WordProgress[]): Record<WordStat
     counts[progress.state] += 1;
   }
   return counts;
-}
-
-export class WaveManager {
-  canOpenNextWave(waveProgress: WordProgress[], now: Date): boolean {
-    return canOpenNextWave(waveProgress, now);
-  }
-
-  getUnlockedWordIds(allWordIds: string[], unlockedWaveCount: number): string[] {
-    return getUnlockedWordIds(allWordIds, unlockedWaveCount);
-  }
 }

@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  gradeChoiceExercise,
+  gradeForeignTermAnswer,
+} from "../../application/exerciseGrading";
 import { ExerciseType } from "../../domain/enums/ExerciseType";
 import { isContextExerciseTask, isProductionExerciseTask } from "../../domain/models/ExerciseTask";
 import {
   buildContextTask,
   buildProductionTask,
   buildContextPrompt,
-  gradeForeignTermAnswer,
   maskForeignTerm,
 } from "./ContextExerciseBuilder";
 import { getMockWords, getMockWordsByTopic } from "./MockWordCatalog";
@@ -14,7 +17,6 @@ import { planSession } from "./MockSessionPlanner";
 import {
   buildRecallTask,
   buildRecognitionTask,
-  gradeChoiceExercise,
 } from "./MultipleChoiceExerciseBuilder";
 
 describe("MockSessionPlanner", () => {

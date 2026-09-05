@@ -90,21 +90,3 @@ export function updateSkillMastery(skill: SkillProgress, correct: boolean): void
     skill.mastery = Math.max(0, skill.mastery * 0.5);
   }
 }
-
-export class MasteryService {
-  calculateMastery(progress: WordProgress): number {
-    return calculateMastery(getSkillMasteries(progress));
-  }
-
-  getWeakestSkill(progress: WordProgress): SkillType {
-    return getWeakestSkill(getSkillMasteries(progress));
-  }
-
-  determineWordState(progress: WordProgress, mastery: number): WordState {
-    return determineWordState(progress, mastery);
-  }
-
-  isCritical(mastery: number, priorityDisplay: number): boolean {
-    return isCriticalWord(mastery, priorityDisplay);
-  }
-}

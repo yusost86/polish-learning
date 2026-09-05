@@ -5,7 +5,7 @@ import { db } from "../db/database";
 
 export let testLearningService: LocalLearningService;
 
-export async function resetTestLearningService(): Promise<LocalLearningService> {
+async function resetTestLearningService(): Promise<LocalLearningService> {
   await db.delete();
   await db.open();
   testLearningService = new LocalLearningService();

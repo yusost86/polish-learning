@@ -72,5 +72,3 @@ export function seedTopicAIter1Before(studentId: string, now: Date): WordProgres
   const snapshot = topicAIter1Before as ScenarioSnapshot;
   return snapshot.words.map((word) => progressFromSnapshot(studentId, word, now));
 }
-
-export { topicAIter1Before };

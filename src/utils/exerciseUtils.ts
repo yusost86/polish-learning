@@ -25,10 +25,3 @@ export function exercisePromptLabel(type: ExerciseType): string {
   }
   return "Оберіть переклад";
 }
-
-export const EXERCISES_PER_WORD = [
-  ExerciseType.Recognition,
-  ExerciseType.Recall,
-  ExerciseType.Production,
-  ExerciseType.Context,
-] as const;

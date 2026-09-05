@@ -34,7 +34,6 @@ export const SLOW_THRESHOLD_MS = 5000;
 export const EASY_CONSECUTIVE_CORRECT = 4;
 export const MAX_ERROR_RISK_COUNT = 5;
 export const OVERDUE_CAP_DAYS = 7;
-export const SKILL_LEARNING_RATE = 0.6;
 export const CRITICAL_MASTERY_THRESHOLD = 0.3;
 export const CRITICAL_PRIORITY_DISPLAY = 80;
 

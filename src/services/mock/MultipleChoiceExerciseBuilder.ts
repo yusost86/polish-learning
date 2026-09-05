@@ -81,8 +81,3 @@ export function buildExerciseTask(
   }
   return buildRecognitionTask(word, pool);
 }
-
-export {
-  gradeChoiceExercise,
-  getCorrectChoiceLabel,
-} from "../../application/exerciseGrading";

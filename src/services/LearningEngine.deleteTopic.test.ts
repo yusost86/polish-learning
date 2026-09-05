@@ -1,14 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { CATALOG_WORDS, DEFAULT_STUDENT_ID } from "../data/catalogSeed";
-import { getCachedWords, setCatalogCache } from "../data/catalogProvider";
 import { LearningEngine } from "./LearningEngine";
 import { InMemoryLearningRepository } from "../repositories/InMemoryLearningRepository";
-import { syncCatalogCache } from "./catalogSync";
 import { createInitialCard } from "./FsrsService";
 
 describe("LearningEngine.deleteTopic", () => {
-  it("removes all words for the topic, progress, and catalog cache", async () => {
+  it("removes all words for the topic and progress", async () => {
     const repository = new InMemoryLearningRepository(CATALOG_WORDS);
     const engine = new LearningEngine(repository);
 
@@ -27,9 +25,6 @@ describe("LearningEngine.deleteTopic", () => {
     expect(await repository.getAllWords()).toHaveLength(CATALOG_WORDS.length - travelWordCount);
     expect(await repository.getProgress(DEFAULT_STUDENT_ID, "airport")).toBeNull();
     expect((await repository.getTopicNames()).travel).toBeUndefined();
-
-    await syncCatalogCache(repository, setCatalogCache);
-    expect(getCachedWords().some((word) => word.topicId === "travel")).toBe(false);
   });
 
   it("throws when topic does not exist", async () => {

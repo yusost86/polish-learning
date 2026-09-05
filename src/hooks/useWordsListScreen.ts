@@ -18,10 +18,8 @@ const EXAMPLE_JSON = `[
   }
 ]`;
 
-export type WordsListTopic = TopicListItem;
-
 export interface UseWordsListScreenResult {
-  topics: WordsListTopic[];
+  topics: TopicListItem[];
   importText: string;
   importMessage: string | null;
   importError: string | null;
@@ -31,7 +29,7 @@ export interface UseWordsListScreenResult {
   deleteError: string | null;
   onBack: () => void;
   onOpenTopic: (topicId: string) => void;
-  onDeleteTopic: (topic: WordsListTopic) => void;
+  onDeleteTopic: (topic: TopicListItem) => void;
   onImportTextChange: (value: string) => void;
   onImportWords: () => void;
   onUseExample: () => void;
@@ -40,7 +38,7 @@ export interface UseWordsListScreenResult {
 export function useWordsListScreen(): UseWordsListScreenResult {
   const service = useLearningService();
   const navigate = useNavigate();
-  const [topics, setTopics] = useState<WordsListTopic[]>([]);
+  const [topics, setTopics] = useState<TopicListItem[]>([]);
   const [importText, setImportText] = useState("");
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
@@ -95,7 +93,7 @@ export function useWordsListScreen(): UseWordsListScreenResult {
   }, [importText, refreshTopics, service]);
 
   const onDeleteTopic = useCallback(
-    async (topic: WordsListTopic) => {
+    async (topic: TopicListItem) => {
       const confirmed = window.confirm(
         `Видалити тему «${topic.name}» (${topic.wordCount} слів)? Уся статистика прогресу буде втрачена.`,
       );
