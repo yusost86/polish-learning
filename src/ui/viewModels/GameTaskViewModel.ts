@@ -1,6 +1,6 @@
 import type { ExerciseTask } from "../../domain/models/ExerciseTask";
 
-export type SessionPhase = "loading" | "exercise" | "feedback" | "complete" | "error";
+export type SessionPhase = "loading" | "exercise" | "submitting" | "feedback" | "complete" | "error";
 
 export interface SessionProgress {
   current: number;

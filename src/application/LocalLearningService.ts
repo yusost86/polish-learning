@@ -31,6 +31,7 @@ interface SessionState {
   modeLabel: string;
   queue: LearningQueueItem[];
   tasks: ExerciseTask[];
+  answeredTasks: Map<number, SubmitAnswerResult>;
 }
 
 function createSessionId(): string {
@@ -57,8 +58,8 @@ export class LocalLearningService implements LearningService {
     }
 
     const repository = this.deps?.repository ?? new DexieLearningRepository();
-    if (!this.deps?.repository) {
-      await (repository as DexieLearningRepository).initialize();
+    if (repository instanceof DexieLearningRepository) {
+      await repository.initialize();
     }
 
     this.repository = repository;
@@ -175,6 +176,7 @@ export class LocalLearningService implements LearningService {
       modeLabel: sessionModeLabel(params.mode),
       queue,
       tasks,
+      answeredTasks: new Map(),
     });
 
     return {
@@ -189,6 +191,11 @@ export class LocalLearningService implements LearningService {
     const session = this.sessions.get(params.sessionId);
     if (!session) {
       throw new Error(`Session not found: ${params.sessionId}`);
+    }
+
+    const existing = session.answeredTasks.get(params.taskIndex);
+    if (existing) {
+      return existing;
     }
 
     const queueItem = session.queue[params.taskIndex];
@@ -208,13 +215,18 @@ export class LocalLearningService implements LearningService {
     });
 
     const nextTaskIndex = params.taskIndex + 1;
-    const isSessionComplete = nextTaskIndex >= session.tasks.length;
-
-    return {
+    const result: SubmitAnswerResult = {
       isCorrect: graded.isCorrect,
       correctAnswerLabel: graded.correctAnswerLabel,
-      isSessionComplete,
+      isSessionComplete: nextTaskIndex >= session.tasks.length,
       nextTaskIndex,
     };
+
+    session.answeredTasks.set(params.taskIndex, result);
+    return result;
+  }
+
+  endSession(sessionId: string): void {
+    this.sessions.delete(sessionId);
   }
 }

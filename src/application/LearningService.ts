@@ -19,4 +19,5 @@ export interface LearningService {
   deleteTopic(topicId: string): Promise<TopicDeleteResult>;
   startSession(params: SessionStartParams): Promise<SessionStartResult>;
   submitAnswer(params: SubmitAnswerParams): Promise<SubmitAnswerResult>;
+  endSession(sessionId: string): void;
 }

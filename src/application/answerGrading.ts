@@ -1,10 +1,10 @@
 import type { ExerciseTask } from "../domain/models/ExerciseTask";
 import { isChoiceExerciseTask, isTypedExerciseTask } from "../domain/models/ExerciseTask";
-import { gradeForeignTermAnswer } from "../services/mock/ContextExerciseBuilder";
 import {
   getCorrectChoiceLabel,
   gradeChoiceExercise,
-} from "../services/mock/MultipleChoiceExerciseBuilder";
+  gradeForeignTermAnswer,
+} from "./exerciseGrading";
 import type { SessionAnswer } from "./types/session";
 
 export interface GradedAnswer {
