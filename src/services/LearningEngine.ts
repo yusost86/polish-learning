@@ -11,7 +11,6 @@ import type { TopicDeleteResult } from "../domain/models/TopicDeleteResult";
 import type { WordImportResult } from "../domain/models/WordImport";
 import type { TopicProgress } from "../domain/models/TopicProgress";
 import { createEmptyWordProgress, type WordProgress } from "../domain/models/WordProgress";
-import { getCachedTopics, setCatalogCache } from "../data/catalogProvider";
 import { QUEUE_SLOTS } from "../domain/constants";
 import type { Word } from "../domain/models/Word";
 import type { LearningDataRepository } from "../repositories/WordProgressRepository";
@@ -31,7 +30,7 @@ import {
 } from "./sessionQueueTypes";
 import { calculateTopicProgress } from "./TopicProgressService";
 import { calculateMenuStats } from "./MenuStatsService";
-import { importWordsJson, syncCatalogCache } from "./catalogSync";
+import { importWordsJson } from "./catalogSync";
 import { getUnlockedTopicWords } from "./WaveManager";
 
 function exerciseToSkill(exerciseType: ExerciseType): SkillType {
@@ -121,7 +120,7 @@ export class LearningEngine {
       };
     }
 
-    const fallbackTopicId = getCachedTopics()[0]?.topicId ?? "travel";
+    const fallbackTopicId = await this.getFallbackTopicId();
     const topicWords = await this.repository.getTopicWords(fallbackTopicId);
     const waveCount = await this.repository.getUnlockedWaveCount(studentId, fallbackTopicId);
     return {
@@ -190,15 +189,11 @@ export class LearningEngine {
   }
 
   async importWords(json: string): Promise<WordImportResult> {
-    const result = await importWordsJson(this.repository, json);
-    await syncCatalogCache(this.repository, setCatalogCache);
-    return result;
+    return importWordsJson(this.repository, json);
   }
 
   async deleteTopic(studentId: string, topicId: string): Promise<TopicDeleteResult> {
-    const result = await this.repository.deleteTopic(topicId, studentId);
-    await syncCatalogCache(this.repository, setCatalogCache);
-    return result;
+    return this.repository.deleteTopic(topicId, studentId);
   }
 
   async getTopicOverview(studentId: string, topicId: string): Promise<TopicOverview> {
@@ -287,6 +282,19 @@ export class LearningEngine {
       this.fsrsService.createInitialCard(this.now),
     );
     await this.repository.save(fresh);
+  }
+
+  private async getFallbackTopicId(): Promise<string> {
+    const allWords = await this.repository.getAllWords();
+    const topicIds = [...new Set(allWords.map((word) => word.topicId))];
+    if (topicIds.length === 0) {
+      return "travel";
+    }
+
+    const topicNames = await this.repository.getTopicNames();
+    return [...topicIds].sort((a, b) =>
+      (topicNames[a] ?? a).localeCompare(topicNames[b] ?? b, "uk"),
+    )[0];
   }
 
   private async countCompletedTopics(studentId: string): Promise<number> {

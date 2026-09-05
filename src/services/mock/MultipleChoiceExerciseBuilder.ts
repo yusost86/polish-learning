@@ -82,10 +82,7 @@ export function buildExerciseTask(
   return buildRecognitionTask(word, pool);
 }
 
-export function gradeChoiceExercise(task: ChoiceExerciseTask, choiceId: string): boolean {
-  return task.correctChoiceId === choiceId;
-}
-
-export function getCorrectChoiceLabel(task: ChoiceExerciseTask): string {
-  return task.choices.find((choice) => choice.id === task.correctChoiceId)?.label ?? "";
-}
+export {
+  gradeChoiceExercise,
+  getCorrectChoiceLabel,
+} from "../../application/exerciseGrading";

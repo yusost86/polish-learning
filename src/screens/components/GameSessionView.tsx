@@ -50,6 +50,7 @@ export function GameSessionView({
   loadError,
 }: GameSessionViewProps) {
   const topicLabel = topicName ? ` · ${topicName}` : "";
+  const inputsDisabled = phase === "feedback" || phase === "submitting";
 
   if (phase === "loading") {
     return (
@@ -160,7 +161,7 @@ export function GameSessionView({
             choices={task.choices}
             selectedChoiceId={selectedChoiceId}
             correctChoiceId={phase === "feedback" ? task.correctChoiceId : null}
-            disabled={phase === "feedback"}
+            disabled={inputsDisabled}
             onSelect={onSelectAnswer}
           />
         </>
@@ -171,7 +172,7 @@ export function GameSessionView({
           <PromptCard label={promptLabel} prompt={task.prompt} />
           <TypeInExerciseView
             value={typedAnswer}
-            disabled={phase === "feedback"}
+            disabled={inputsDisabled}
             onChange={onTypedAnswerChange}
             onSubmit={onSubmitTypedAnswer}
           />
@@ -187,7 +188,7 @@ export function GameSessionView({
           />
           <TypeInExerciseView
             value={typedAnswer}
-            disabled={phase === "feedback"}
+            disabled={inputsDisabled}
             onChange={onTypedAnswerChange}
             onSubmit={onSubmitTypedAnswer}
           />

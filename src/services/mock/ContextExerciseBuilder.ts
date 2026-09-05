@@ -1,16 +1,13 @@
 import type { Word } from "../../domain/models/Word";
 import { ExerciseType } from "../../domain/enums/ExerciseType";
 import type { TypedExerciseTask } from "../../domain/models/ExerciseTask";
+import { gradeForeignTermAnswer } from "../../application/exerciseGrading";
 
 const CONTEXT_BLANK = "______";
 
-export function gradeForeignTermAnswer(expectedTerm: string, answer: string): boolean {
-  return (
-    expectedTerm.trim().toLocaleLowerCase("pl-PL") === answer.trim().toLocaleLowerCase("pl-PL")
-  );
-}
+export { gradeForeignTermAnswer };
 
-/** @deprecated Use gradeForeignTermAnswer */
+/** @deprecated Use gradeForeignTermAnswer from application/exerciseGrading */
 export const gradeContextAnswer = gradeForeignTermAnswer;
 
 /** Masks foreign (PL) term: first 2 letters visible, then alternate hidden/shown. e.g. dworzec → dw_r_e_ */

@@ -52,4 +52,6 @@ export class MockLearningService implements LearningService {
     isSessionComplete: params.taskIndex >= 0,
     nextTaskIndex: params.taskIndex + 1,
   });
+
+  endSession = (): void => {};
 }

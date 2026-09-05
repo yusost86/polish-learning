@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { HashRouter } from "react-router-dom";
 
 import App from "./App";
+import type { LearningService } from "./application/LearningService";
 import { LocalLearningService } from "./application/LocalLearningService";
 import { LearningServiceProvider } from "./ui/providers/LearningServiceProvider";
 import "./index.css";
@@ -10,7 +11,7 @@ import "./index.css";
 import { registerSW } from "virtual:pwa-register";
 
 function Root() {
-  const [service, setService] = useState<LocalLearningService | null>(null);
+  const [service, setService] = useState<LearningService | null>(null);
   const [initError, setInitError] = useState<string | null>(null);
 
   useEffect(() => {

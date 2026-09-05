@@ -29,16 +29,24 @@ export function useGameScreen(): UseGameScreenResult {
     }
 
     let cancelled = false;
-    void service.getTopics().then((topics) => {
-      if (!cancelled) {
-        setKnownTopicIds(new Set(topics.map((topic) => topic.topicId)));
-        setTopicsLoaded(true);
-      }
-    });
+    void service
+      .getTopics()
+      .then((topics) => {
+        if (!cancelled) {
+          setKnownTopicIds(new Set(topics.map((topic) => topic.topicId)));
+          setTopicsLoaded(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setKnownTopicIds(new Set());
+          setTopicsLoaded(true);
+        }
+      });
     return () => {
       cancelled = true;
     };
-  }, [service, needsTopicValidation]);
+  }, [service, needsTopicValidation, topicId]);
 
   const topicsReady = !needsTopicValidation || topicsLoaded;
 

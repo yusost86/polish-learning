@@ -64,16 +64,35 @@ export function useExerciseSession({
   const [modeLabel, setModeLabel] = useState("");
   const [topicName, setTopicName] = useState("");
   const answerStartedAtRef = useRef(Date.now());
+  const sessionGenerationRef = useRef(0);
+  const activeSessionIdRef = useRef<string | null>(null);
+
+  const endActiveSession = useCallback(
+    (id: string | null) => {
+      if (id) {
+        service.endSession(id);
+      }
+    },
+    [service],
+  );
 
   useEffect(() => {
     let cancelled = false;
+    const generation = sessionGenerationRef.current + 1;
+    sessionGenerationRef.current = generation;
 
     async function loadSession() {
       if (!enabled) {
+        endActiveSession(activeSessionIdRef.current);
+        activeSessionIdRef.current = null;
+        setSessionId(null);
+        setTasks([]);
         return;
       }
 
       if (!mode) {
+        endActiveSession(activeSessionIdRef.current);
+        activeSessionIdRef.current = null;
         setSessionId(null);
         setTasks([]);
         setLoadError(null);
@@ -81,15 +100,22 @@ export function useExerciseSession({
         return;
       }
 
+      endActiveSession(activeSessionIdRef.current);
+      activeSessionIdRef.current = null;
+
       setPhase("loading");
       setLoadError(null);
+      resetAnswerState(setSelectedChoiceId, setTypedAnswer, setIsCorrect, setCorrectAnswerLabel);
+
       try {
         const result = await service.startSession({ mode, topicId });
 
-        if (cancelled) {
+        if (cancelled || sessionGenerationRef.current !== generation) {
+          service.endSession(result.sessionId);
           return;
         }
 
+        activeSessionIdRef.current = result.sessionId;
         setSessionId(result.sessionId);
         setTasks(result.tasks);
         setModeLabel(result.modeLabel);
@@ -98,7 +124,7 @@ export function useExerciseSession({
         setPhase(result.tasks.length > 0 ? "exercise" : "complete");
         answerStartedAtRef.current = Date.now();
       } catch (err) {
-        if (!cancelled) {
+        if (!cancelled && sessionGenerationRef.current === generation) {
           setSessionId(null);
           setTasks([]);
           setLoadError(err instanceof Error ? err.message : "Не вдалося завантажити сесію");
@@ -110,8 +136,12 @@ export function useExerciseSession({
     void loadSession();
     return () => {
       cancelled = true;
+      if (sessionGenerationRef.current === generation) {
+        endActiveSession(activeSessionIdRef.current);
+        activeSessionIdRef.current = null;
+      }
     };
-  }, [mode, topicId, retryCount, service, enabled]);
+  }, [mode, topicId, retryCount, service, enabled, endActiveSession]);
 
   const task = useMemo(() => tasks[taskIndex] ?? null, [tasks, taskIndex]);
 
@@ -121,26 +151,53 @@ export function useExerciseSession({
     }
   }, [phase, taskIndex, task]);
 
+  const submitCurrentAnswer = useCallback(
+    async (answer: { type: "choice"; choiceId: string } | { type: "typed"; text: string }) => {
+      if (!sessionId || phase !== "exercise" || !task) {
+        return;
+      }
+
+      const generation = sessionGenerationRef.current;
+      setPhase("submitting");
+
+      try {
+        const result = await service.submitAnswer({
+          sessionId,
+          taskIndex,
+          answer,
+          responseTimeMs: Date.now() - answerStartedAtRef.current,
+        });
+
+        if (sessionGenerationRef.current !== generation) {
+          return;
+        }
+
+        setIsCorrect(result.isCorrect);
+        setCorrectAnswerLabel(result.correctAnswerLabel);
+        setPhase("feedback");
+      } catch (err) {
+        if (sessionGenerationRef.current !== generation) {
+          return;
+        }
+        setLoadError(err instanceof Error ? err.message : "Не вдалося зберегти відповідь");
+        setPhase("error");
+      }
+    },
+    [sessionId, phase, task, taskIndex, service],
+  );
+
   const onSelectAnswer = useCallback(
-    async (choiceId: string) => {
+    (choiceId: string) => {
       if (phase !== "exercise" || !task || !isChoiceExerciseTask(task) || !sessionId) {
         return;
       }
       setSelectedChoiceId(choiceId);
-      const result = await service.submitAnswer({
-        sessionId,
-        taskIndex,
-        answer: { type: "choice", choiceId },
-        responseTimeMs: Date.now() - answerStartedAtRef.current,
-      });
-      setIsCorrect(result.isCorrect);
-      setCorrectAnswerLabel(result.correctAnswerLabel);
-      setPhase("feedback");
+      void submitCurrentAnswer({ type: "choice", choiceId });
     },
-    [phase, task, sessionId, taskIndex, service],
+    [phase, task, sessionId, submitCurrentAnswer],
   );
 
-  const onSubmitTypedAnswer = useCallback(async () => {
+  const onSubmitTypedAnswer = useCallback(() => {
     if (
       phase !== "exercise" ||
       !task ||
@@ -150,16 +207,8 @@ export function useExerciseSession({
     ) {
       return;
     }
-    const result = await service.submitAnswer({
-      sessionId,
-      taskIndex,
-      answer: { type: "typed", text: typedAnswer },
-      responseTimeMs: Date.now() - answerStartedAtRef.current,
-    });
-    setIsCorrect(result.isCorrect);
-    setCorrectAnswerLabel(result.correctAnswerLabel);
-    setPhase("feedback");
-  }, [phase, task, typedAnswer, sessionId, taskIndex, service]);
+    void submitCurrentAnswer({ type: "typed", text: typedAnswer });
+  }, [phase, task, typedAnswer, sessionId, submitCurrentAnswer]);
 
   const onContinue = useCallback(() => {
     if (phase !== "feedback") {
@@ -168,6 +217,9 @@ export function useExerciseSession({
 
     const nextIndex = taskIndex + 1;
     if (nextIndex >= tasks.length) {
+      endActiveSession(activeSessionIdRef.current);
+      activeSessionIdRef.current = null;
+      setSessionId(null);
       setPhase("complete");
       return;
     }
@@ -175,7 +227,7 @@ export function useExerciseSession({
     setTaskIndex(nextIndex);
     resetAnswerState(setSelectedChoiceId, setTypedAnswer, setIsCorrect, setCorrectAnswerLabel);
     setPhase("exercise");
-  }, [phase, taskIndex, tasks.length]);
+  }, [phase, taskIndex, tasks.length, endActiveSession]);
 
   const onRetry = useCallback(() => {
     setRetryCount((count) => count + 1);
