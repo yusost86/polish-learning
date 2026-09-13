@@ -1,7 +1,7 @@
-import { useMenuStats } from "../hooks/useMenuStats";
-import { usePlaceholderScreen } from "../hooks/usePlaceholderScreen";
-import { PlaceholderView } from "./components/PlaceholderView";
-import { StatRow } from "./components/StatRow";
+import { useMenuStats } from "../../hooks/useMenuStats";
+import { usePlaceholderScreen } from "../../hooks/usePlaceholderScreen";
+import { PlaceholderView } from "../components/PlaceholderView";
+import { StatRow } from "../components/StatRow";
 
 export default function StatisticsScreen() {
   const { onBack } = usePlaceholderScreen();

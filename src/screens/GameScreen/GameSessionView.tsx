@@ -7,8 +7,8 @@ import {
 import { getTopicName } from "../../data/wordCatalog";
 import type { SessionPhase } from "../../ui/viewModels/GameTaskViewModel";
 import { exercisePromptLabel, exerciseTypeTitle } from "../../utils/exerciseUtils";
+import { BackButton } from "../components/BackButton";
 import { AnswerFeedback } from "./AnswerFeedback";
-import { BackButton } from "./BackButton";
 import { MultipleChoiceExerciseView } from "./MultipleChoiceExerciseView";
 import { PromptCard } from "./PromptCard";
 import { TypeInExerciseView } from "./TypeInExerciseView";

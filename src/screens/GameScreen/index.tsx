@@ -1,7 +1,7 @@
-import { useExerciseSession } from "../hooks/useExerciseSession";
-import { useGameScreen } from "../hooks/useGameScreen";
-import { GameSessionView } from "./components/GameSessionView";
-import { PlaceholderView } from "./components/PlaceholderView";
+import { useExerciseSession } from "../../hooks/useExerciseSession";
+import { useGameScreen } from "../../hooks/useGameScreen";
+import { PlaceholderView } from "../components/PlaceholderView";
+import { GameSessionView } from "./GameSessionView";
 
 export default function GameScreen() {
   const { mode, topicId, isValidSession, onBack } = useGameScreen();

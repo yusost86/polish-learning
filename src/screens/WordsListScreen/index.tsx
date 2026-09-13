@@ -1,5 +1,5 @@
-import { useWordsListScreen } from "../hooks/useWordsListScreen";
-import { BackButton } from "./components/BackButton";
+import { useWordsListScreen } from "../../hooks/useWordsListScreen";
+import { BackButton } from "../components/BackButton";
 
 export default function WordsListScreen() {
   const {

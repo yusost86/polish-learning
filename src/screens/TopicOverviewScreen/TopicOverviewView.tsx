@@ -1,6 +1,6 @@
 import type { TopicOverviewViewModel } from "../../ui/viewModels/TopicOverviewViewModel";
-import { BackButton } from "./BackButton";
-import { StatRow } from "./StatRow";
+import { BackButton } from "../components/BackButton";
+import { StatRow } from "../components/StatRow";
 import { TopicWordRow } from "./TopicWordRow";
 import { UpcomingTaskRow } from "./UpcomingTaskRow";
 

@@ -2,19 +2,19 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { DEFAULT_STUDENT_ID } from "../data/wordCatalog";
-import { db } from "../db/database";
-import { WordState } from "../domain/enums/WordState";
-import { createEmptyWordProgress } from "../domain/models/WordProgress";
-import { DexieLearningRepository } from "../repositories/DexieLearningRepository";
-import { serializeWordProgress } from "../repositories/progressMapper";
-import { createInitialCard } from "../services/FsrsService";
-import { getUnlockedTopicWords } from "../services/WaveManager";
-import GameScreen from "./GameScreen";
-import MenuScreen from "./MenuScreen";
-import StatisticsScreen from "./StatisticsScreen";
-import TopicOverviewScreen from "./TopicOverviewScreen";
-import WordsListScreen from "./WordsListScreen";
+import { DEFAULT_STUDENT_ID } from "../../data/wordCatalog";
+import { db } from "../../db/database";
+import { WordState } from "../../domain/enums/WordState";
+import { createEmptyWordProgress } from "../../domain/models/WordProgress";
+import { DexieLearningRepository } from "../../repositories/DexieLearningRepository";
+import { serializeWordProgress } from "../../repositories/progressMapper";
+import { createInitialCard } from "../../services/FsrsService";
+import { getUnlockedTopicWords } from "../../services/WaveManager";
+import GameScreen from "../GameScreen";
+import StatisticsScreen from "../StatisticsScreen";
+import TopicOverviewScreen from "../TopicOverviewScreen";
+import WordsListScreen from "../WordsListScreen";
+import MenuScreen from ".";
 
 afterEach(cleanup);
 
@@ -167,7 +167,7 @@ describe("GameScreen", () => {
 
     await waitFor(() => expect(screen.queryByText("przystawka")).not.toBeInTheDocument());
 
-    const { initLearningEngine } = await import("../services/learningEngineProvider");
+    const { initLearningEngine } = await import("../../services/learningEngineProvider");
     const engine = await initLearningEngine();
     const progress = await engine.getWordProgress("student-1", "appetizer");
     expect(progress.totalAttempts).toBe(1);

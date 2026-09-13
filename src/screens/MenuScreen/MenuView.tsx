@@ -1,6 +1,6 @@
 import type { MenuSummary, TopicStatViewModel } from "../../ui/viewModels/MenuViewModel";
+import { StatRow } from "../components/StatRow";
 import { NavButton } from "./NavButton";
-import { StatRow } from "./StatRow";
 import { TopicCard } from "./TopicCard";
 
 interface MenuViewProps {

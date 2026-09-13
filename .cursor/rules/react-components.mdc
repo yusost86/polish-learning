@@ -10,9 +10,10 @@ Use functional components. Split **smart** (container) and **dumb** (presentatio
 
 ## Placement
 
-- **Smart:** `src/screens/*Screen.tsx` — data, routing, hooks, services. Compose views; keep JSX thin.
-- **Dumb:** `src/screens/components/*`, `*View.tsx` — render props, emit callbacks. No fetch, Dexie, routers, or domain services.
-- Shared UI pieces live in `screens/components/`. Do not nest new presentational components inside a Screen file.
+- **Smart:** `src/screens/<ScreenName>/index.tsx` — data, routing, hooks, services. Compose views; keep JSX thin.
+- **Dumb (screen-owned):** `src/screens/<ScreenName>/*.tsx` — views and widgets used only by that screen.
+- **Shared:** `src/screens/components/` — UI used by more than one screen (`BackButton`, `PlaceholderView`, `StatRow`).
+- Do not put new presentational components inside the Screen `index` file.
 
 ## Rules
 
@@ -30,12 +31,13 @@ export default function WordDetailScreen() {
   return <div>{word?.lemma}</div>;
 }
 
-// ✅ GOOD — Screen wires; View renders
+// ✅ GOOD — src/screens/WordDetailScreen/index.tsx wires; View renders
 export default function WordDetailScreen() {
   const { word, onBack } = useWordDetail();
   return <WordDetailView word={word} onBack={onBack} />;
 }
 
+// src/screens/WordDetailScreen/WordDetailView.tsx
 export function WordDetailView({ word, onBack }: WordDetailViewProps) {
   return <section><BackButton onClick={onBack} /><h1>{word.lemma}</h1></section>;
 }

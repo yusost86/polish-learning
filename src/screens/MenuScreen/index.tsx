@@ -1,5 +1,5 @@
-import { useMenuScreen } from "../hooks/useMenuScreen";
-import { MenuView } from "./components/MenuView";
+import { useMenuScreen } from "../../hooks/useMenuScreen";
+import { MenuView } from "./MenuView";
 
 export default function MenuScreen() {
   const {

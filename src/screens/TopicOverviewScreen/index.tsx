@@ -1,6 +1,6 @@
-import { useTopicOverview } from "../hooks/useTopicOverview";
-import { PlaceholderView } from "./components/PlaceholderView";
-import { TopicOverviewView } from "./components/TopicOverviewView";
+import { useTopicOverview } from "../../hooks/useTopicOverview";
+import { PlaceholderView } from "../components/PlaceholderView";
+import { TopicOverviewView } from "./TopicOverviewView";
 
 export default function TopicOverviewScreen() {
   const { overview, loading, error, onBack, onRefresh, onStartSession } = useTopicOverview();
