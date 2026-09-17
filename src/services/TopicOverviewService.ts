@@ -25,7 +25,7 @@ export async function buildTopicOverview(
     const state = progress?.state ?? WordState.New;
     const consecutiveCorrect = progress?.consecutiveCorrect ?? 0;
 
-    if (state === WordState.Mature) {
+    if (state === WordState.Mature || state === WordState.Relearning) {
       masteredCount += 1;
     } else if (state === WordState.New) {
       newCount += 1;
