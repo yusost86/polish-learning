@@ -105,6 +105,10 @@ export class LearningWordModel {
     const previousState = this.LearningWord.state;
     this.LearningWord.state = determineWordState(this.LearningWord);
 
+    if (previousState !== this.LearningWord.state) {
+      this.LearningWord.consecutiveCorrect = 0;
+    }
+
     this.stateChanged = previousState !== this.LearningWord.state;
   }
 }

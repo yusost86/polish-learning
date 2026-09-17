@@ -17,7 +17,6 @@ export interface UseMenuStatsResult {
   topicStats: TopicStatViewModel[];
   loading: boolean;
   error: string | null;
-  refresh: () => void;
 }
 
 export function useMenuStats(): UseMenuStatsResult {
@@ -51,7 +50,6 @@ export function useMenuStats(): UseMenuStatsResult {
     summary,
     topicStats,
     loading,
-    error,
-    refresh: () => void load(),
+    error
   };
 }

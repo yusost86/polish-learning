@@ -24,7 +24,7 @@ export function DevGradeButtons({ onGrade, correctAnswer }: DevGradeButtonsProps
       </button>
       <button
         type="button"
-        onClick={() => onGrade(correctAnswer)}
+        onClick={() => onGrade("")}
         style={{
           flex: 1,
           padding: "13px 16px",

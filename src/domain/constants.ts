@@ -1,1 +1,0 @@
-export const TOPIC_REVIEW_THRESHOLD_PCT = 90;

@@ -10,7 +10,6 @@ export default function MenuScreen() {
     appVersion,
     devMode,
     onRepeatDue,
-    onTopicPrimaryAction,
     onOpenTopic,
     onOpenStats,
     onOpenWords,
@@ -26,7 +25,6 @@ export default function MenuScreen() {
       appVersion={appVersion}
       devMode={devMode}
       onRepeatDue={onRepeatDue}
-      onTopicPrimaryAction={onTopicPrimaryAction}
       onOpenTopic={onOpenTopic}
       onOpenStats={onOpenStats}
       onOpenWords={onOpenWords}

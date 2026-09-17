@@ -8,13 +8,13 @@ export enum WordState {
   /**
    * до 2 послідовні успіхів - multiple choice =>  foreign - вибір правильного варіанту з  native декількох запропонованих 
    * до 2 послідовні успіхів - multiple choice =>  native - вибір правильного варіанту з  foreign декількох запропонованих 
-   * 4 послідовних успіха - перехід Learning
+   * 4 послідовних успіха - перехід LEARNING
    */
   Learning = "LEARNING",
   /**
-   * до 2 полслідовних успіхів - native words => put letters in correct order 
-   * до 2 полслідовних успіхів - native words => put missing letters in gaps
-   * * 4 послідовних успіха - перехід Learning
+   * до 2 послідовних успіхів - native words => put missing letters in gaps
+   * до 2 послідовних успіхів - native words => put letters in correct order
+   * 4 послідовних успіха - перехід Mature
    */
   Consolidating = "CONSOLIDATING",
 

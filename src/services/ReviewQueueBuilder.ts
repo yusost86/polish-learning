@@ -6,54 +6,26 @@ interface ChainStep {
   cap: number;
 }
 
-/** Default priority chain for lesson allocation. */
-const DEFAULT_CHAIN: ChainStep[] = [
+/** Default priority for lesson allocation. */
+const DEFAULT_PRIORITY: ChainStep[] = [
   { state: WordState.Learning, cap: 10 },
   { state: WordState.Consolidating, cap: 10 },
   { state: WordState.Mature, cap: 4 },
   { state: WordState.Relearning, cap: 2 },
   { state: WordState.New, cap: 10 },
-  { state: WordState.Relearning, cap: 5 },
 ];
-
-const EMPTY_TAKEN: Record<WordState, number> = {
-  [WordState.Learning]: 0,
-  [WordState.Consolidating]: 0,
-  [WordState.Mature]: 0,
-  [WordState.Relearning]: 0,
-  [WordState.New]: 0,
-};
 
 const LESSON_SIZE = 10;
 
+function getQueueByQuata(learningWords: LearningWord[], limit: number): LearningWord[] {
+    // todo -dequeue from learningWords
+    return learningWords.splice(0, limit);
+}
 /**
  * @param available   How many words are available in each state
  * @param chain       Priority chain (state + cap), in order
  * @param waveSize    Target lesson size (default 10)
  */
-export function allocateWave(
-  available: Record<WordState, number>,
-  chain: ChainStep[] = DEFAULT_CHAIN,
-  waveSize: number = LESSON_SIZE,
-) {
-  const taken: Record<WordState, number> = { ...EMPTY_TAKEN };
-  let remaining = waveSize;
-
-  for (const step of chain) {
-    if (remaining <= 0) {
-      break;
-    }
-
-    const alreadyTakenFromState = taken[step.state];
-    const availableLeft = Math.max(available[step.state] - alreadyTakenFromState, 0);
-    const take = Math.min(step.cap, availableLeft, remaining);
-
-    taken[step.state] += take;
-    remaining -= take;
-  }
-
-  return { taken, shortfall: remaining };
-}
 
 /** Builds a lesson queue from available learning words using {@link allocateWave}. */
 export const getLearningWordForLessonByState = (learningWords: LearningWord[]): LearningWord[] => {
@@ -66,34 +38,17 @@ export const getLearningWordForLessonByState = (learningWords: LearningWord[]): 
     byState.get(learningWord.state)!.push(learningWord);
   }
 
-  const available: Record<WordState, number> = {
-    [WordState.Learning]: byState.get(WordState.Learning)!.length,
-    [WordState.Consolidating]: byState.get(WordState.Consolidating)!.length,
-    [WordState.Mature]: byState.get(WordState.Mature)!.length,
-    [WordState.Relearning]: byState.get(WordState.Relearning)!.length,
-    [WordState.New]: byState.get(WordState.New)!.length,
-  };
-
-  const { taken } = allocateWave(available);
-  const indexByState: Record<WordState, number> = { ...EMPTY_TAKEN };
   const result: LearningWord[] = [];
-
-  for (const step of DEFAULT_CHAIN) {
-    if (result.length >= LESSON_SIZE) {
-      break;
+  let limit = Math.min(learningWords.length, LESSON_SIZE);
+  while(limit > 0){
+    for (const step of DEFAULT_PRIORITY) { 
+      const quota = Math.min(limit, step.cap);
+      const  candidates = getQueueByQuata(byState.get(step.state)!, quota);
+      result.push(...candidates);
+      limit -= candidates.length;
     }
-
-    const pool = byState.get(step.state)!;
-    const start = indexByState[step.state];
-    const remainingForState = taken[step.state] - start;
-    const take = Math.min(step.cap, remainingForState, pool.length - start, LESSON_SIZE - result.length);
-
-    for (let i = 0; i < take; i += 1) {
-      result.push(pool[start + i]);
-    }
-
-    indexByState[step.state] += take;
   }
 
   return result;
 };
+

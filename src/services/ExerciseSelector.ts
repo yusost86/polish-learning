@@ -2,8 +2,8 @@ import { ExerciseType } from "../domain/enums/ExerciseType";
 import { WordState } from "../domain/enums/WordState";
 import type { LearningWord } from "../domain/models/LearningWordModel";
 
-/** Consecutive correct answers of one exercise type before the selector advances to the next type. */
-const STREAK_TO_ADVANCE = 2;
+/** Streak within a state before switching to the second exercise phase (Learning / Consolidating). */
+const PHASE_THRESHOLD = 2;
 
 /** Production exercises shown in Relearning, in round-robin order. */
 const RELEARNING_CYCLE = [
@@ -12,20 +12,13 @@ const RELEARNING_CYCLE = [
   ExerciseType.InputFullWord,
 ] as const;
 
-/**
- * True when the last `count` history entries of `exercise` are all correct.
- * Uses per-type history, not `consecutiveCorrect`, which is shared across all types.
- */
-function hasConsecutiveCorrectStreak(
-  progress: LearningWord,
-  exercise: ExerciseType,
-  count: number,
-): boolean {
-  const ofType = progress.wordProgressEntries.filter((entry) => entry.exercise === exercise);
-  if (ofType.length < count) {
-    return false;
-  }
-  return ofType.slice(-count).every((entry) => entry.isCorrect);
+function selectByStreak(
+  consecutiveCorrect: number,
+  threshold: number,
+  beforeThreshold: ExerciseType,
+  fromThreshold: ExerciseType,
+): ExerciseType {
+  return consecutiveCorrect < threshold ? beforeThreshold : fromThreshold;
 }
 
 /** Next type in the Relearning cycle after the most recent history entry. */
@@ -41,22 +34,26 @@ function nextRelearningExercise(progress: LearningWord): ExerciseType {
 
 /**
  * Picks the next exercise from `WordState` (see comments on the enum).
- * Does not change state — graduation after streaks is the engine's job.
+ * Learning / Consolidating use `consecutiveCorrect` for two-phase selection (2 + 2 = 4 to advance).
  */
 export function selectExerciseType(progress: LearningWord): ExerciseType {
   switch (progress.state) {
     case WordState.New:
       return ExerciseType.Flashcard;
     case WordState.Learning:
-      // Native MC (PL → UA) until two successes of that type, then Foreign MC (UA → PL).
-      return hasConsecutiveCorrectStreak(progress, ExerciseType.NativeMultipleChoice, STREAK_TO_ADVANCE)
-        ? ExerciseType.ForeignMultipleChoice
-        : ExerciseType.NativeMultipleChoice;
+      return selectByStreak(
+        progress.consecutiveCorrect,
+        PHASE_THRESHOLD,
+        ExerciseType.ForeignMultipleChoice,
+        ExerciseType.NativeMultipleChoice,
+      );
     case WordState.Consolidating:
-      // Letters until two successes of that type, then missing-letter gaps.
-      return hasConsecutiveCorrectStreak(progress, ExerciseType.PutLettersInCorrectOrder, STREAK_TO_ADVANCE)
-        ? ExerciseType.PutMissingLettersInGaps
-        : ExerciseType.PutLettersInCorrectOrder;
+      return selectByStreak(
+        progress.consecutiveCorrect,
+        PHASE_THRESHOLD,
+        ExerciseType.PutMissingLettersInGaps,
+        ExerciseType.PutLettersInCorrectOrder,
+      );
     case WordState.Mature:
       return ExerciseType.InputFullWord;
     case WordState.Relearning:

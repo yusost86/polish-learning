@@ -1,15 +1,10 @@
 import { getTopicName } from "../../data/wordCatalog";
-import { TOPIC_REVIEW_THRESHOLD_PCT } from "../../domain/constants";
 import type { MenuStats } from "../../domain/models/MenuStats";
 import type { TopicMenuStats } from "../../domain/models/MenuStats";
-import type { MenuSummary, TopicPrimaryAction, TopicStatViewModel } from "./MenuViewModel";
+import type { MenuSummary, TopicStatViewModel } from "./MenuViewModel";
 
 export function getTopicProgressPct(learned: number, total: number): number {
   return total > 0 ? Math.round((learned / total) * 100) : 0;
-}
-
-export function getTopicPrimaryAction(progressPct: number): TopicPrimaryAction {
-  return progressPct >= TOPIC_REVIEW_THRESHOLD_PCT ? "review" : "learn";
 }
 
 export function toTopicStatViewModel(topic: TopicMenuStats): TopicStatViewModel {
@@ -23,7 +18,6 @@ export function toTopicStatViewModel(topic: TopicMenuStats): TopicStatViewModel 
     new: topic.new,
     learnable: topic.learnable,
     progressPct,
-    primaryAction: getTopicPrimaryAction(progressPct),
   };
 }
 

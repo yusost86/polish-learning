@@ -40,7 +40,7 @@ describe("session flow", () => {
     const lesson2 = await engine.getLesson({ topicId: "travel" });
     const again = lesson2.GetExercises().find((item) => item.word.id === wordId);
     expect(again?.LearningWord.LearningWord.state).toBe(WordState.Learning);
-    expect(again?.exerciseType).toBe(ExerciseType.NativeMultipleChoice);
+    expect(again?.exerciseType).toBe(ExerciseType.ForeignMultipleChoice);
   });
 
   it("defaults missing consecutiveCorrect from legacy progress rows", () => {
@@ -86,6 +86,49 @@ describe("session flow", () => {
     expect(exercise.prompt).toBe(word.term);
     expect(exercise.answer(word.translation)).toBe(true);
     expect(exercise.answer(word.term)).toBe(false);
+  });
+
+  it("resets consecutiveCorrect when word state changes", () => {
+    const word = {
+      id: "transport",
+      term: "transport",
+      translation: "транспорт",
+      topicId: "daily-life",
+    };
+    const learningWord = createEmptyLearningWord(word.id, word.topicId, new Date());
+    learningWord.state = WordState.Consolidating;
+    learningWord.consecutiveCorrect = 3;
+
+    const model = new LearningWordModel(learningWord, word, () => [word]);
+    const exercise = new ExerciseModel(ExerciseType.NativeMultipleChoice, word, model);
+
+    exercise.answer(word.translation);
+
+    expect(model.LearningWord.state).toBe(WordState.Mature);
+    expect(model.LearningWord.consecutiveCorrect).toBe(0);
+  });
+
+  it("requires two successes in Mature before Relearning", () => {
+    const word = {
+      id: "transport",
+      term: "transport",
+      translation: "транспорт",
+      topicId: "daily-life",
+    };
+    const learningWord = createEmptyLearningWord(word.id, word.topicId, new Date());
+    learningWord.state = WordState.Mature;
+    learningWord.consecutiveCorrect = 0;
+
+    const model = new LearningWordModel(learningWord, word, () => [word]);
+    const exercise = new ExerciseModel(ExerciseType.InputFullWord, word, model);
+
+    exercise.answer(word.term);
+    expect(model.LearningWord.state).toBe(WordState.Mature);
+    expect(model.LearningWord.consecutiveCorrect).toBe(1);
+
+    exercise.answer(word.term);
+    expect(model.LearningWord.state).toBe(WordState.Relearning);
+    expect(model.LearningWord.consecutiveCorrect).toBe(0);
   });
 
   it("grades foreign multiple choice against the polish term", () => {

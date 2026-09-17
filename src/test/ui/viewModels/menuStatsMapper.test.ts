@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  getTopicPrimaryAction,
   getTopicProgressPct,
   toTopicStatViewModel,
 } from "../../../ui/viewModels/menuStatsMapper";
@@ -18,20 +17,8 @@ describe("menuStatsMapper", () => {
     });
   });
 
-  describe("getTopicPrimaryAction", () => {
-    it("returns learn below 90%", () => {
-      expect(getTopicPrimaryAction(0)).toBe("learn");
-      expect(getTopicPrimaryAction(89)).toBe("learn");
-    });
-
-    it("returns review at or above 90%", () => {
-      expect(getTopicPrimaryAction(90)).toBe("review");
-      expect(getTopicPrimaryAction(100)).toBe("review");
-    });
-  });
-
   describe("toTopicStatViewModel", () => {
-    it("maps topic stats with progress and primary action", () => {
+    it("maps topic stats with progress", () => {
       const viewModel = toTopicStatViewModel({
         topicId: "food",
         total: 10,
@@ -50,11 +37,10 @@ describe("menuStatsMapper", () => {
         new: 1,
         learnable: 3,
         progressPct: 80,
-        primaryAction: "learn",
       });
     });
 
-    it("switches to review at 90% progress", () => {
+    it("calculates progress at 90%", () => {
       const viewModel = toTopicStatViewModel({
         topicId: "food",
         total: 10,
@@ -65,7 +51,6 @@ describe("menuStatsMapper", () => {
       });
 
       expect(viewModel.progressPct).toBe(90);
-      expect(viewModel.primaryAction).toBe("review");
     });
   });
 });
