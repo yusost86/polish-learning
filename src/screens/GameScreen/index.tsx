@@ -1,11 +1,14 @@
+import { getTopicName } from "../../data/wordCatalog";
+import { useAppSettings } from "../../hooks/useAppSettings";
 import { useExerciseSession } from "../../hooks/useExerciseSession";
 import { useGameScreen } from "../../hooks/useGameScreen";
 import { PlaceholderView } from "../components/PlaceholderView";
 import { GameSessionView } from "./GameSessionView";
 
 export default function GameScreen() {
-  const { mode, topicId, isValidSession, onBack } = useGameScreen();
-  const session = useExerciseSession({ mode, topicId, onBack });
+  const {topicId, isValidSession, onBack } = useGameScreen();
+  const session = useExerciseSession({topicId, onBack });
+  const { devMode } = useAppSettings();
 
   if (!isValidSession) {
     return (
@@ -20,21 +23,15 @@ export default function GameScreen() {
   return (
     <GameSessionView
       phase={session.phase}
-      task={session.task}
+      exercise={session.exercise}
       progress={session.progress}
       modeLabel={session.modeLabel}
-      topicId={topicId}
-      selectedChoiceId={session.selectedChoiceId}
-      typedAnswer={session.typedAnswer}
-      isCorrect={session.isCorrect}
-      correctAnswerLabel={session.correctAnswerLabel}
+      topicLabel={topicId ? ` · ${getTopicName(topicId)}` : ""}
       onBack={session.onBack}
-      onSelectAnswer={session.onSelectAnswer}
-      onTypedAnswerChange={session.onTypedAnswerChange}
-      onSubmitTypedAnswer={session.onSubmitTypedAnswer}
       onContinue={session.onContinue}
       onRetry={session.onRetry}
       loadError={session.loadError}
+      devMode={devMode}
     />
   );
 }

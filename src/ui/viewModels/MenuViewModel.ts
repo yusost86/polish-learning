@@ -19,9 +19,3 @@ export interface TopicStatViewModel {
   primaryAction: TopicPrimaryAction;
 }
 
-export interface MenuViewModel {
-  summary: MenuSummary;
-  topicStats: TopicStatViewModel[];
-}
-
-export type { SessionMode } from "../../domain/enums/SessionMode";

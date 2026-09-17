@@ -3,6 +3,4 @@ export interface Word {
   term: string;
   translation: string;
   topicId: string;
-  /** Polish sentence with `______` where the target word belongs. */
-  contextSentence?: string;
 }

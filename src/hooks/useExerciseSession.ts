@@ -1,21 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 
-import { DEFAULT_STUDENT_ID } from "../data/wordCatalog";
-import { getCachedWords } from "../data/catalogProvider";
-import type { Word } from "../domain/models/Word";
-import type { ExerciseTask } from "../domain/models/ExerciseTask";
-import type { LearningQueueItem } from "../domain/models/LearningQueueItem";
-import { isChoiceExerciseTask, isTypedExerciseTask } from "../domain/models/ExerciseTask";
-import { buildTaskFromQueueItem } from "../services/exerciseTaskBuilder";
 import { initLearningEngine } from "../services/learningEngineProvider";
-import { gradeForeignTermAnswer } from "../services/mock/ContextExerciseBuilder";
-import {
-  getCorrectChoiceLabel,
-  gradeChoiceExercise,
-} from "../services/mock/MultipleChoiceExerciseBuilder";
 import type { SessionPhase } from "../ui/viewModels/GameTaskViewModel";
-import type { SessionMode } from "../domain/enums/SessionMode";
-import { sessionModeLabel } from "../utils/sessionUtils";
+import { sessionModeLabel, type SessionMode } from "../utils/sessionUtils";
+import { ExerciseModel, LessonModel } from "../domain/models/LessonModel";
 
 export interface UseExerciseSessionParams {
   mode?: SessionMode;
@@ -25,32 +13,109 @@ export interface UseExerciseSessionParams {
 
 export interface UseExerciseSessionResult {
   phase: SessionPhase;
-  task: ExerciseTask | null;
+  exercise: ExerciseModel | null;
   progress: { current: number; total: number };
-  selectedChoiceId: string | null;
-  typedAnswer: string;
-  isCorrect: boolean | null;
-  correctAnswerLabel: string;
   modeLabel: string;
   loadError: string | null;
-  onSelectAnswer: (choiceId: string) => void;
-  onTypedAnswerChange: (value: string) => void;
-  onSubmitTypedAnswer: () => void;
-  onContinue: () => void;
+  onContinue: (correct: boolean) => void;
   onRetry: () => void;
   onBack: () => void;
 }
 
-function resetAnswerState(
-  setSelectedChoiceId: (value: string | null) => void,
-  setTypedAnswer: (value: string) => void,
-  setIsCorrect: (value: boolean | null) => void,
-  setCorrectAnswerLabel: (value: string) => void,
-): void {
-  setSelectedChoiceId(null);
-  setTypedAnswer("");
-  setIsCorrect(null);
-  setCorrectAnswerLabel("");
+interface ExerciseSessionState {
+  queue: ExerciseModel[];
+  phase: SessionPhase;
+  loadError: string | null;
+  currentTask: ExerciseModel | null;
+  total: number;
+}
+
+type ExerciseSessionAction =
+  | { type: "sessionCleared" }
+  | { type: "loadStarted" }
+  | { type: "loadSucceeded"; queue: ExerciseModel[] }
+  | { type: "loadFailed"; message: string }
+  | { type: "continued" }
+  | { type: "retried" };
+
+function createInitialState(): ExerciseSessionState {
+  return {
+    queue: [],
+    phase: "loading",
+    loadError: null,
+    currentTask: null,
+    total: 0,
+  };
+}
+
+function exerciseSessionReducer(
+  state: ExerciseSessionState,
+  action: ExerciseSessionAction,
+): ExerciseSessionState {
+  switch (action.type) {
+    case "sessionCleared":
+      return {
+        ...state,
+        queue: [],
+        loadError: null,
+        currentTask: null,
+        total: 0,
+        phase: "complete",
+      };
+    case "loadStarted":
+      return {
+        ...state,
+        phase: "loading",
+        loadError: null,
+      };
+    case "loadSucceeded": {
+      const [first, ...rest] = action.queue;
+      return {
+        ...state,
+        queue: rest,
+        currentTask: first ?? null,
+        total: action.queue.length,
+        phase: action.queue.length > 0 ? "exercise" : "complete",
+      };
+    }
+    case "loadFailed":
+      return {
+        ...state,
+        queue: [],
+        currentTask: null,
+        total: 0,
+        loadError: action.message,
+        phase: "error",
+      };
+    case "continued": {
+      if (state.phase !== "exercise") {
+        return state;
+      }
+
+      if (!state.queue.length) {
+        return {
+          ...state,
+          currentTask: null,
+          phase: "complete",
+        };
+      }
+
+      return {
+        ...state,
+        currentTask: state.queue[0],
+        queue: state.queue.slice(1),
+        phase: "exercise",
+      };
+    }
+    case "retried":
+      return {
+        ...state,
+      };
+    default: {
+      const _exhaustive: never = action;
+      return _exhaustive;
+    }
+  }
 }
 
 export function useExerciseSession({
@@ -58,49 +123,33 @@ export function useExerciseSession({
   topicId,
   onBack,
 }: UseExerciseSessionParams): UseExerciseSessionResult {
-  const [queue, setQueue] = useState<LearningQueueItem[]>([]);
-  const [wordPool, setWordPool] = useState<Word[]>(() => getCachedWords());
-  const [taskIndex, setTaskIndex] = useState(0);
-  const [phase, setPhase] = useState<SessionPhase>("loading");
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
-  const [typedAnswer, setTypedAnswer] = useState("");
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-  const [correctAnswerLabel, setCorrectAnswerLabel] = useState("");
+  const [state, dispatch] = useReducer(exerciseSessionReducer, undefined, createInitialState);
+  const { queue, phase, loadError, currentTask, total } = state;
   const answerStartedAtRef = useRef(Date.now());
+  const lessonRef = useRef<LessonModel | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadSession() {
-      if (!mode) {
-        setQueue([]);
-        setLoadError(null);
-        setPhase("complete");
-        return;
-      }
-
-      setPhase("loading");
-      setLoadError(null);
+      dispatch({ type: "loadStarted" });
       try {
         const engine = await initLearningEngine();
-        const tasks = await engine.getNextTasks(DEFAULT_STUDENT_ID, { topicId, mode });
+        const lesson = await engine.getLesson({ topicId });
 
         if (cancelled) {
           return;
         }
 
-        setQueue(tasks);
-        setWordPool(getCachedWords());
-        setTaskIndex(0);
-        setPhase(tasks.length > 0 ? "exercise" : "complete");
+        lessonRef.current = lesson;
+        dispatch({ type: "loadSucceeded", queue: lesson.GetExercises() });
         answerStartedAtRef.current = Date.now();
       } catch (err) {
         if (!cancelled) {
-          setQueue([]);
-          setLoadError(err instanceof Error ? err.message : "Не вдалося завантажити сесію");
-          setPhase("error");
+          dispatch({
+            type: "loadFailed",
+            message: err instanceof Error ? err.message : "Не вдалося завантажити сесію",
+          });
         }
       }
     }
@@ -109,102 +158,49 @@ export function useExerciseSession({
     return () => {
       cancelled = true;
     };
-  }, [mode, topicId, retryCount]);
+  }, [topicId]);
 
-  const currentItem = queue[taskIndex] ?? null;
-
-  const task = useMemo(() => {
-    if (!currentItem) {
-      return null;
-    }
-    return buildTaskFromQueueItem(currentItem, wordPool);
-  }, [currentItem, wordPool]);
+  const exercise = currentTask;
 
   useEffect(() => {
     if (phase === "exercise") {
       answerStartedAtRef.current = Date.now();
     }
-  }, [phase, taskIndex, task]);
+  }, [phase, exercise]);
 
   const persistAnswer = useCallback(
-    async (correct: boolean) => {
-      if (!currentItem) {
+    async (_correct: boolean) => {
+      if (!exercise) {
         return;
       }
       const engine = await initLearningEngine();
-      await engine.submitAnswer({
-        studentId: DEFAULT_STUDENT_ID,
-        wordId: currentItem.word.id,
-        exerciseType: currentItem.exercise,
-        correct,
-        responseTimeMs: Date.now() - answerStartedAtRef.current,
+      await engine.submitAnswer(exercise.LearningWord);
+    },
+    [exercise],
+  );
+
+  const onContinue = useCallback(
+    (correct: boolean) => {
+      void persistAnswer(correct).then(() => {
+        dispatch({ type: "continued" });
       });
     },
-    [currentItem],
+    [persistAnswer],
   );
-
-  const onSelectAnswer = useCallback(
-    (choiceId: string) => {
-      if (phase !== "exercise" || !task || !isChoiceExerciseTask(task)) {
-        return;
-      }
-      const correct = gradeChoiceExercise(task, choiceId);
-      setSelectedChoiceId(choiceId);
-      setIsCorrect(correct);
-      setCorrectAnswerLabel(getCorrectChoiceLabel(task));
-      setPhase("feedback");
-      void persistAnswer(correct);
-    },
-    [phase, task, persistAnswer],
-  );
-
-  const onSubmitTypedAnswer = useCallback(() => {
-    if (phase !== "exercise" || !task || !isTypedExerciseTask(task) || !typedAnswer.trim()) {
-      return;
-    }
-    const correct = gradeForeignTermAnswer(task.expectedTerm, typedAnswer);
-    setIsCorrect(correct);
-    setCorrectAnswerLabel(task.expectedTerm);
-    setPhase("feedback");
-    void persistAnswer(correct);
-  }, [phase, task, typedAnswer, persistAnswer]);
-
-  const onContinue = useCallback(() => {
-    if (phase !== "feedback") {
-      return;
-    }
-
-    const nextIndex = taskIndex + 1;
-    if (nextIndex >= queue.length) {
-      setPhase("complete");
-      return;
-    }
-
-    setTaskIndex(nextIndex);
-    resetAnswerState(setSelectedChoiceId, setTypedAnswer, setIsCorrect, setCorrectAnswerLabel);
-    setPhase("exercise");
-  }, [phase, taskIndex, queue.length]);
 
   const onRetry = useCallback(() => {
-    setRetryCount((count) => count + 1);
+    dispatch({ type: "retried" });
   }, []);
 
   return {
     phase,
-    task,
+    exercise,
     progress: {
-      current: queue.length === 0 ? 0 : taskIndex + 1,
-      total: queue.length,
+      current: total === 0 ? 0 : total - queue.length,
+      total,
     },
-    selectedChoiceId,
-    typedAnswer,
-    isCorrect,
-    correctAnswerLabel,
     modeLabel: sessionModeLabel(mode),
     loadError,
-    onSelectAnswer,
-    onTypedAnswerChange: setTypedAnswer,
-    onSubmitTypedAnswer,
     onContinue,
     onRetry,
     onBack,

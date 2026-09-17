@@ -8,13 +8,17 @@ export function getCachedWords(): Word[] {
   return cachedWords;
 }
 
-export function getCachedTopicNames(): Record<string, string> {
-  return cachedTopicNames;
-}
-
 export function setCatalogCache(words: Word[], topicNames: Record<string, string>): void {
   cachedWords = words;
   cachedTopicNames = topicNames;
+}
+
+export function getCatalogTopics(): { topicId: string; name: string; wordCount: number }[] {
+  return getCachedTopics();
+}
+
+export function getTopicName(topicId: string): string {
+  return cachedTopicNames[topicId] ?? topicId;
 }
 
 export function getCachedTopics(): { topicId: string; name: string; wordCount: number }[] {
@@ -32,12 +36,4 @@ export function getCachedTopics(): { topicId: string; name: string; wordCount: n
     }))
     .filter((topic) => topic.wordCount > 0)
     .sort((a, b) => a.name.localeCompare(b.name, "uk"));
-}
-
-export function getTopicName(topicId: string): string {
-  return cachedTopicNames[topicId] ?? TOPIC_NAMES[topicId] ?? topicId;
-}
-
-export function getCatalogTopics(): { topicId: string; name: string; wordCount: number }[] {
-  return getCachedTopics();
 }

@@ -1,7 +1,6 @@
-import type { ChoiceOption } from "../../domain/models/ExerciseTask";
 
 interface MultipleChoiceExerciseViewProps {
-  choices: ChoiceOption[];
+  choices: string[];
   selectedChoiceId: string | null;
   correctChoiceId: string | null;
   disabled: boolean;
@@ -33,16 +32,16 @@ export function MultipleChoiceExerciseView({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {choices.map((choice) => {
-        const isSelected = selectedChoiceId === choice.id;
-        const isCorrect = showResults && choice.id === correctChoiceId;
-        const isWrong = showResults && isSelected && choice.id !== correctChoiceId;
+        const isSelected = selectedChoiceId === choice;
+        const isCorrect = showResults && choice === correctChoiceId;
+        const isWrong = showResults && isSelected && choice !== correctChoiceId;
         const style = choiceStyle(isSelected, isCorrect, isWrong);
 
         return (
           <button
-            key={choice.id}
+            key={choice}
             disabled={disabled}
-            onClick={() => onSelect(choice.id)}
+            onClick={() => onSelect(choice)}
             style={{
               ...style,
               width: "100%",
@@ -53,7 +52,7 @@ export function MultipleChoiceExerciseView({
               textAlign: "left",
             }}
           >
-            {choice.label}
+            {choice}
           </button>
         );
       })}

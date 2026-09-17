@@ -16,10 +16,23 @@ alwaysApply: false
 
 ## Built-in hooks
 
-- `useState` — UI and hook-local state only. Do not mirror server/DB state in many places; reload via a single hook (see `useAppData`).
+- `useState` — UI and hook-local state only. Do not mirror server/DB state in many places; reload via a single hook (see `useAppData`). If a component or custom hook needs **more than 3 `useState`**, combine that state into **`useReducer`**.
+- `useReducer` — related fields that update together (session queue, attempt phase). Prefer this over a cluster of setters.
 - `useEffect` — synchronize with external systems (DB, subscriptions). Always return cleanup when needed. List every used value in the dependency array.
 - `useMemo` / `useCallback` — only when the value is expensive or a child/effect depends on referential equality. Do not wrap everything.
 - `useRef` — mutable values that must not trigger render (guards, DOM nodes). Do not use refs as a state store.
+
+```ts
+// ❌ BAD — four independent setters for one attempt
+const [phase, setPhase] = useState("exercise");
+const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+const [choiceId, setChoiceId] = useState<string | null>(null);
+const [typed, setTyped] = useState("");
+
+// ✅ GOOD — one reducer when the piece of state grows past three useState calls
+const [state, dispatch] = useReducer(attemptReducer, initialAttempt);
+```
+
 
 ## Context
 

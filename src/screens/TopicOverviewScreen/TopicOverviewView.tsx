@@ -2,7 +2,6 @@ import type { TopicOverviewViewModel } from "../../ui/viewModels/TopicOverviewVi
 import { BackButton } from "../components/BackButton";
 import { StatRow } from "../components/StatRow";
 import { TopicWordRow } from "./TopicWordRow";
-import { UpcomingTaskRow } from "./UpcomingTaskRow";
 
 interface TopicOverviewViewProps {
   overview: TopicOverviewViewModel;
@@ -58,14 +57,10 @@ export function TopicOverviewView({
           Прогрес теми
         </div>
         <StatRow label="Слів у темі" value={topicProgress.totalWords} />
-        <StatRow label="Засвоєних (≥65%)" value={topicProgress.masteredCount} />
-        <StatRow label="Критичних" value={topicProgress.criticalCount} />
+        <StatRow label="Засвоєних" value={topicProgress.masteredCount} />
+        <StatRow label="У навчанні" value={topicProgress.learningCount} />
+        <StatRow label="Нових" value={topicProgress.newCount} />
         <StatRow label="Прогрес" value={`${masteredPct}%`} />
-        {topicProgress.canOpenNextWave && (
-          <div style={{ marginTop: 10, fontSize: 13, color: "var(--good)", fontWeight: 600 }}>
-            Наступна хвиля доступна
-          </div>
-        )}
         <button
           onClick={onStartSession}
           style={{
@@ -89,68 +84,6 @@ export function TopicOverviewView({
             fontSize: 13,
             fontWeight: 700,
             color: "var(--text-dim)",
-            marginBottom: 10,
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-          }}
-        >
-          Наступна сесія ({overview.upcomingTasks.length})
-        </div>
-        <div
-          style={{
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius-m)",
-            padding: "4px 16px",
-          }}
-        >
-          {overview.upcomingTasks.length === 0 && (
-            <div style={{ padding: "16px 0", color: "var(--text-faint)", fontSize: 14 }}>
-              Черга порожня.
-            </div>
-          )}
-          {overview.upcomingTasks.map((task) => (
-            <UpcomingTaskRow key={`${task.wordId}-${task.index}`} task={task} />
-          ))}
-        </div>
-      </section>
-
-      {overview.followingTasks.length > 0 && (
-        <section>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: "var(--text-dim)",
-              marginBottom: 10,
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-            }}
-          >
-            Далі в черзі ({overview.followingTasks.length})
-          </div>
-          <div
-            style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius-m)",
-              padding: "4px 16px",
-              opacity: 0.85,
-            }}
-          >
-            {overview.followingTasks.map((task) => (
-              <UpcomingTaskRow key={`${task.wordId}-${task.index}`} task={task} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section>
-        <div
-          style={{
-            fontSize: 13,
-            fontWeight: 700,
-            color: "var(--text-dim)",
             marginBottom: 4,
             textTransform: "uppercase",
             letterSpacing: "0.05em",
@@ -158,12 +91,6 @@ export function TopicOverviewView({
         >
           Слова теми ({overview.words.length})
         </div>
-        {overview.words.some((word) => word.isLocked) && (
-          <div style={{ fontSize: 12, color: "var(--text-faint)", marginBottom: 10 }}>
-            {overview.words.filter((word) => !word.isLocked).length} доступно ·{" "}
-            {overview.words.filter((word) => word.isLocked).length} у наступній хвилі
-          </div>
-        )}
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {overview.words.map((word) => (
             <TopicWordRow key={word.wordId} word={word} />

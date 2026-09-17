@@ -1,56 +1,33 @@
-import type { ExerciseTask } from "../../domain/models/ExerciseTask";
-import {
-  isChoiceExerciseTask,
-  isContextExerciseTask,
-  isProductionExerciseTask,
-} from "../../domain/models/ExerciseTask";
-import { getTopicName } from "../../data/wordCatalog";
 import type { SessionPhase } from "../../ui/viewModels/GameTaskViewModel";
-import { exercisePromptLabel, exerciseTypeTitle } from "../../utils/exerciseUtils";
 import { BackButton } from "../components/BackButton";
-import { AnswerFeedback } from "./AnswerFeedback";
-import { MultipleChoiceExerciseView } from "./MultipleChoiceExerciseView";
-import { PromptCard } from "./PromptCard";
-import { TypeInExerciseView } from "./TypeInExerciseView";
+import { ActiveExercise } from "./exercises/ActiveExercise";
+import { ExerciseModel } from "../../domain/models/LessonModel";
 
 interface GameSessionViewProps {
   phase: SessionPhase;
-  task: ExerciseTask | null;
+  exercise: ExerciseModel | null;
   progress: { current: number; total: number };
   modeLabel: string;
-  topicId?: string;
-  selectedChoiceId: string | null;
-  typedAnswer: string;
-  isCorrect: boolean | null;
-  correctAnswerLabel: string;
   onBack: () => void;
-  onSelectAnswer: (choiceId: string) => void;
-  onTypedAnswerChange: (value: string) => void;
-  onSubmitTypedAnswer: () => void;
-  onContinue: () => void;
+  onContinue: (correct: boolean) => void;
   onRetry?: () => void;
   loadError?: string | null;
+  devMode?: boolean;
+  topicLabel: string;
 }
 
 export function GameSessionView({
   phase,
-  task,
+  exercise,
   progress,
   modeLabel,
-  topicId,
-  selectedChoiceId,
-  typedAnswer,
-  isCorrect,
-  correctAnswerLabel,
+  topicLabel,
   onBack,
-  onSelectAnswer,
-  onTypedAnswerChange,
-  onSubmitTypedAnswer,
   onContinue,
   onRetry,
   loadError,
+  devMode = false,
 }: GameSessionViewProps) {
-  const topicLabel = topicId ? ` · ${getTopicName(topicId)}` : "";
 
   if (phase === "loading") {
     return (
@@ -134,9 +111,6 @@ export function GameSessionView({
     );
   }
 
-  const exerciseTitle = task ? exerciseTypeTitle(task.exerciseType) : "Вправа";
-  const promptLabel = task ? exercisePromptLabel(task.exerciseType) : "Оберіть відповідь";
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
@@ -146,59 +120,16 @@ export function GameSessionView({
         </div>
       </div>
 
-      <div>
-        <div style={{ fontSize: 13, color: "var(--gold)", fontWeight: 600, marginBottom: 4 }}>
-          {modeLabel}
-          {topicLabel}
-        </div>
-        <h1 style={{ fontSize: 22 }}>{exerciseTitle}</h1>
+      <div style={{ fontSize: 13, color: "var(--gold)", fontWeight: 600 }}>
+        {modeLabel}
+        {topicLabel}
       </div>
 
-      {task && isChoiceExerciseTask(task) && (
-        <>
-          <PromptCard label={promptLabel} prompt={task.prompt} />
-          <MultipleChoiceExerciseView
-            choices={task.choices}
-            selectedChoiceId={selectedChoiceId}
-            correctChoiceId={phase === "feedback" ? task.correctChoiceId : null}
-            disabled={phase === "feedback"}
-            onSelect={onSelectAnswer}
-          />
-        </>
-      )}
-
-      {task && isProductionExerciseTask(task) && (
-        <>
-          <PromptCard label={promptLabel} prompt={task.prompt} />
-          <TypeInExerciseView
-            value={typedAnswer}
-            disabled={phase === "feedback"}
-            onChange={onTypedAnswerChange}
-            onSubmit={onSubmitTypedAnswer}
-          />
-        </>
-      )}
-
-      {task && isContextExerciseTask(task) && (
-        <>
-          <PromptCard
-            title={task.translationHint}
-            prompt={task.prompt}
-            isMaskedWord
-          />
-          <TypeInExerciseView
-            value={typedAnswer}
-            disabled={phase === "feedback"}
-            onChange={onTypedAnswerChange}
-            onSubmit={onSubmitTypedAnswer}
-          />
-        </>
-      )}
-
-      {phase === "feedback" && isCorrect !== null && (
-        <AnswerFeedback
-          isCorrect={isCorrect}
-          correctAnswerLabel={correctAnswerLabel}
+      {exercise && (
+        <ActiveExercise
+          key={`${progress.current}-${exercise.word.id}-${exercise.exerciseType}`}
+          exercise={exercise}
+          devMode={devMode}
           onContinue={onContinue}
         />
       )}

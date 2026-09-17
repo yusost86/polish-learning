@@ -15,8 +15,6 @@ export const MOCK_WORDS: Word[] = [
   { id: "travel-mapa", term: "mapa", translation: "карта", topicId: "travel" },
 ];
 
-export const KNOWN_TOPIC_IDS = new Set(MOCK_WORDS.map((word) => word.topicId));
-
 export function getMockWords(): Word[] {
   return MOCK_WORDS;
 }

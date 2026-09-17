@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { DEFAULT_STUDENT_ID } from "../data/wordCatalog";
-import { initLearningEngine } from "../services/learningEngineProvider";
+import { initLearningRepository } from "../services/learningEngineProvider";
+import { calculateMenuStats } from "../services/MenuStatsService";
 import { toMenuSummary, toTopicStatViewModels } from "../ui/viewModels/menuStatsMapper";
 import type { MenuSummary, TopicStatViewModel } from "../ui/viewModels/MenuViewModel";
 
@@ -30,8 +30,8 @@ export function useMenuStats(): UseMenuStatsResult {
     setLoading(true);
     setError(null);
     try {
-      const engine = await initLearningEngine();
-      const stats = await engine.getMenuStats(DEFAULT_STUDENT_ID);
+      const repository = await initLearningRepository();
+      const stats = await calculateMenuStats(repository, repository);
       setSummary(toMenuSummary(stats));
       setTopicStats(toTopicStatViewModels(stats));
     } catch (err) {

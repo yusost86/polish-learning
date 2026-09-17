@@ -1,11 +1,8 @@
-import { WAVE_UNLOCK } from "../domain/constants";
 import { WordState } from "../domain/enums/WordState";
 import type { MenuStats, TopicMenuStats } from "../domain/models/MenuStats";
-import type { WordProgress } from "../domain/models/WordProgress";
-import type { LearningDataRepository } from "../repositories/WordProgressRepository";
-import { isReviewDue } from "./FsrsService";
-import { calculateMastery, getSkillMasteries } from "./MasteryService";
-import { getUnlockedTopicWords } from "./WaveManager";
+import type { LearningWord } from "../domain/models/LearningWordModel";
+import type { ILearningWordRepository } from "../repositories/ILearningWordRepository";
+import type { ITopicRepository } from "../repositories/ITopicRepository";
 
 interface WordCounts {
   learned: number;
@@ -14,27 +11,26 @@ interface WordCounts {
   learnable: number;
 }
 
-function countWord(progress: WordProgress | null, now: Date): WordCounts {
-  if (!progress || (progress.state === WordState.New && progress.totalAttempts === 0)) {
+function countWord(progress: LearningWord | null): WordCounts {
+  if (!progress || progress.wordProgressEntries.length === 0) {
     return { learned: 0, due: 0, isNew: 1, learnable: 1 };
   }
 
-  const mastery = calculateMastery(getSkillMasteries(progress));
-  const learned = mastery >= WAVE_UNLOCK.masteryThreshold ? 1 : 0;
-  const due = isReviewDue(progress.fsrsCard, now) ? 1 : 0;
+  const learned = progress.state === WordState.Mature ? 1 : 0;
   const isNew = progress.state === WordState.New ? 1 : 0;
   const learnable =
     progress.state === WordState.New || progress.state === WordState.Learning ? 1 : 0;
+  const due =
+    progress.state === WordState.Relearning || progress.state === WordState.Consolidating ? 1 : 0;
 
   return { learned, due, isNew, learnable };
 }
 
 export async function calculateMenuStats(
-  repository: LearningDataRepository,
-  studentId: string,
-  now: Date,
+  learningWordRepository: ILearningWordRepository,
+  topicRepository: ITopicRepository,
 ): Promise<MenuStats> {
-  const allWords = await repository.getAllWords();
+  const allWords = await topicRepository.getAllWords();
   const topicIds = [...new Set(allWords.map((word) => word.topicId))];
   const topics: TopicMenuStats[] = [];
 
@@ -45,17 +41,16 @@ export async function calculateMenuStats(
 
   for (const topicId of topicIds) {
     const topicWords = allWords.filter((word) => word.topicId === topicId);
-    const waveCount = await repository.getUnlockedWaveCount(studentId, topicId);
-    const unlockedWords = getUnlockedTopicWords(topicWords, waveCount);
+    const progressList = await learningWordRepository.getLearningWordsByTopic(topicId);
+    const progressByWordId = new Map(progressList.map((entry) => [entry.wordId, entry]));
 
     let topicLearned = 0;
     let topicDue = 0;
     let topicNew = 0;
     let topicLearnable = 0;
 
-    for (const word of unlockedWords) {
-      const progress = await repository.getProgress(studentId, word.id);
-      const counts = countWord(progress, now);
+    for (const word of topicWords) {
+      const counts = countWord(progressByWordId.get(word.id) ?? null);
       topicLearned += counts.learned;
       topicDue += counts.due;
       topicNew += counts.isNew;
@@ -64,14 +59,14 @@ export async function calculateMenuStats(
 
     topics.push({
       topicId,
-      total: unlockedWords.length,
+      total: topicWords.length,
       learned: topicLearned,
       due: topicDue,
       new: topicNew,
       learnable: topicLearnable,
     });
 
-    totalUniqueWords += unlockedWords.length;
+    totalUniqueWords += topicWords.length;
     newWordsCount += topicNew;
     learnedWordsCount += topicLearned;
     dueNowCount += topicDue;

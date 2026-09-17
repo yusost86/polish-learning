@@ -9,11 +9,13 @@ interface MenuViewProps {
   loading: boolean;
   error: string | null;
   appVersion: string;
+  devMode: boolean;
   onRepeatDue: () => void;
   onTopicPrimaryAction: (topicId: string, action: "learn" | "review") => void;
   onOpenTopic: (topicId: string) => void;
   onOpenStats: () => void;
   onOpenWords: () => void;
+  onOpenSettings: () => void;
 }
 
 export function MenuView({
@@ -22,11 +24,13 @@ export function MenuView({
   loading,
   error,
   appVersion,
+  devMode,
   onRepeatDue,
   onTopicPrimaryAction,
   onOpenTopic,
   onOpenStats,
   onOpenWords,
+  onOpenSettings,
 }: MenuViewProps) {
   const progressPct = summary.totalUniqueWords
     ? Math.round((summary.learnedWordsCount / summary.totalUniqueWords) * 100)
@@ -126,6 +130,7 @@ export function MenuView({
       <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
         <NavButton icon="📊" label="Статистика" onClick={onOpenStats} />
         <NavButton icon="📖" label="Всі слова" onClick={onOpenWords} />
+        <NavButton icon="⚙️" label="Налаштування" onClick={onOpenSettings} />
       </div>
 
       <div
@@ -139,6 +144,7 @@ export function MenuView({
         }}
       >
         v{appVersion}
+        {devMode ? " · dev" : ""}
       </div>
     </div>
   );

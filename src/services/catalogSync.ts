@@ -1,6 +1,6 @@
 import type { WordImportEntry, WordImportResult } from "../domain/models/WordImport";
 import type { Word } from "../domain/models/Word";
-import type { LearningDataRepository } from "../repositories/WordProgressRepository";
+import type { ITopicRepository } from "../repositories/ITopicRepository";
 import {
   buildWordsForImport,
   mergeImportResult,
@@ -9,7 +9,7 @@ import {
 } from "./WordImportService";
 
 export async function syncCatalogCache(
-  repository: LearningDataRepository,
+  repository: ITopicRepository,
   setCache: (words: Word[], topicNames: Record<string, string>) => void,
 ): Promise<void> {
   const [words, topicNames] = await Promise.all([repository.getAllWords(), repository.getTopicNames()]);
@@ -17,7 +17,7 @@ export async function syncCatalogCache(
 }
 
 export async function importWordEntries(
-  repository: LearningDataRepository,
+  repository: ITopicRepository,
   entries: WordImportEntry[],
 ): Promise<WordImportResult> {
   const existingWords = await repository.getAllWords();
@@ -31,7 +31,7 @@ export async function importWordEntries(
 }
 
 export async function importWordsJson(
-  repository: LearningDataRepository,
+  repository: ITopicRepository,
   json: string,
 ): Promise<WordImportResult> {
   const parsed = parseWordImportJson(json);
@@ -44,7 +44,7 @@ export async function importWordsJson(
 }
 
 export async function importWordsPayload(
-  repository: LearningDataRepository,
+  repository: ITopicRepository,
   payload: unknown,
 ): Promise<WordImportResult> {
   const parsed = parseWordImportPayload(payload);

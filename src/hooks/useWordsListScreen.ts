@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { DEFAULT_STUDENT_ID, getCatalogTopics } from "../data/wordCatalog";
-import { initLearningEngine } from "../services/learningEngineProvider";
+import { importWordsJson } from "../services/catalogSync";
+import { initLearningRepository, initLearningEngine } from "../services/learningEngineProvider";
+import { setCatalogCache } from "../data/catalogProvider";
 
 const EXAMPLE_JSON = `[
   {
@@ -52,7 +54,13 @@ export function useWordsListScreen(): UseWordsListScreenResult {
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const refreshTopics = useCallback(() => {
+  const refreshTopics = useCallback(async () => {
+    const repository = await initLearningRepository();
+    const [words, topicNames] = await Promise.all([
+      repository.getAllWords(),
+      repository.getTopicNames(),
+    ]);
+    setCatalogCache(words, topicNames);
     setTopics(getCatalogTopics());
   }, []);
 
@@ -65,9 +73,9 @@ export function useWordsListScreen(): UseWordsListScreenResult {
     setImportMessage(null);
     setImportError(null);
     try {
-      const engine = await initLearningEngine();
-      const result = await engine.importWords(importText);
-      refreshTopics();
+      const repository = await initLearningRepository();
+      const result = await importWordsJson(repository, importText);
+      await refreshTopics();
 
       if (result.errors.length > 0 && result.added === 0) {
         setImportError(result.errors.join("\n"));
@@ -110,9 +118,9 @@ export function useWordsListScreen(): UseWordsListScreenResult {
       setDeleteMessage(null);
       setDeleteError(null);
       try {
-        const engine = await initLearningEngine();
-        const result = await engine.deleteTopic(DEFAULT_STUDENT_ID, topic.topicId);
-        refreshTopics();
+        const repository = await initLearningRepository();
+        const result = await repository.deleteTopic(topic.topicId, DEFAULT_STUDENT_ID);
+        await refreshTopics();
         setDeleteMessage(`Тему «${topic.name}» видалено (${result.deletedWordCount} слів)`);
       } catch (err) {
         setDeleteError(err instanceof Error ? err.message : "Не вдалося видалити тему");

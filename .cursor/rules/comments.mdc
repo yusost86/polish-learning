@@ -1,0 +1,46 @@
+---
+description: When and how to write comments in TypeScript
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Comments
+
+Comment **why**, not what the next line already says. Prefer a clear name over a narrating comment.
+
+## Language
+
+Write comments in **English**, same as existing service JSDoc (`maskForeignTerm`, etc.). Learner-facing copy in UI stays Ukrainian.
+
+## What to comment
+
+- Exported functions and public types: a short JSDoc (`/** ... */`) when the name is not enough.
+- Non-obvious invariants: why history is filtered by exercise type, why a streak is 2, why Relearning round-robins.
+- Domain mapping that lives in code, not in the type name (`WordState.Learning` → Native MC then Foreign MC).
+- `@deprecated` when leaving a compat alias.
+
+Do **not** comment:
+
+- Restating the signature (`// returns the exercise type`).
+- Every `case` in a trivial switch (Mature → InputFullWord is obvious).
+- TODO without an owner or next step.
+
+```ts
+// ❌ BAD — narrates the code
+// Filter history by exercise
+const ofType = history.filter((entry) => entry.exercise === exercise);
+
+// ✅ GOOD — explains the invariant
+/** Last N answers of this exercise type, not global consecutiveCorrect. */
+function hasConsecutiveCorrectStreak(...) { ... }
+```
+
+```ts
+// ❌ BAD
+// Increment i
+i += 1;
+
+// ✅ GOOD
+// Skip the first two letters so the stem stays visible (dw_r_e_).
+if (index < 2) return char;
+```

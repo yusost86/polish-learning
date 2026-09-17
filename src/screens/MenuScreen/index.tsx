@@ -8,11 +8,13 @@ export default function MenuScreen() {
     loading,
     error,
     appVersion,
+    devMode,
     onRepeatDue,
     onTopicPrimaryAction,
     onOpenTopic,
     onOpenStats,
     onOpenWords,
+    onOpenSettings,
   } = useMenuScreen();
 
   return (
@@ -22,11 +24,13 @@ export default function MenuScreen() {
       loading={loading}
       error={error}
       appVersion={appVersion}
+      devMode={devMode}
       onRepeatDue={onRepeatDue}
       onTopicPrimaryAction={onTopicPrimaryAction}
       onOpenTopic={onOpenTopic}
       onOpenStats={onOpenStats}
       onOpenWords={onOpenWords}
+      onOpenSettings={onOpenSettings}
     />
   );
 }

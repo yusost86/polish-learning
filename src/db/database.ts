@@ -1,79 +1,59 @@
 import Dexie, { type EntityTable } from "dexie";
 
 import type { WordState } from "../domain/enums/WordState";
-import type { SkillProgress } from "../domain/models/SkillProgress";
+import { ExerciseType } from "../domain/enums/ExerciseType";
+
+type PartOfSpeech = "noun" | "verb" | "adjective" | "adverb" | "pronoun" | "preposition" | "conjunction" | "interjection";
+
+type Language = "ukrainian" | "polish" | "english ";
+
+type StoredWordTranslation = {
+  language: Language;
+  wordId: string;
+}
 
 export interface StoredWord {
   id: string;
   term: string;
-  translation: string;
-  topicId: string;
+  partOfSpeech: PartOfSpeech;
+  language: Language;
+  translation: StoredWordTranslation[];
 }
 
-export interface StoredFsrsCard {
-  due: string;
-  stability: number;
-  difficulty: number;
-  elapsed_days: number;
-  scheduled_days: number;
-  learning_steps: number;
-  reps: number;
-  lapses: number;
-  state: number;
-  last_review?: string;
+export interface StoredWordProgressEntry  {
+  isCorrect: boolean;
+  createdAt: string;
+  exercise: ExerciseType,
+  state: WordState,
 }
 
-export interface StoredWordProgress {
+export interface StoredLearningWord {
   id: string;
-  studentId: string;
   wordId: string;
+  topicId: string;
   state: WordState;
-  recognition: SkillProgress;
-  recall: SkillProgress;
-  production: SkillProgress;
-  context: SkillProgress;
-  totalAttempts: number;
-  correctAttempts: number;
-  errorCount: number;
   consecutiveCorrect: number;
-  consecutiveErrors: number;
-  averageResponseTimeMs: number;
-  lastReviewedAt?: string;
-  fsrsCard: StoredFsrsCard;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface StoredTopicWave {
-  id: string;
-  studentId: string;
-  topicId: string;
-  unlockedWaveCount: number;
+  wordProgressEntries: StoredWordProgressEntry[];
 }
 
 export interface StoredTopic {
   id: string;
   name: string;
+  language: Language;
+  wordProgress: StoredLearningWord[];
 }
 
 export class LearningDatabase extends Dexie {
   words!: EntityTable<StoredWord, "id">;
   topics!: EntityTable<StoredTopic, "id">;
-  studentWordProgress!: EntityTable<StoredWordProgress, "id">;
-  topicWaves!: EntityTable<StoredTopicWave, "id">;
 
   constructor() {
     super("PolishLearning");
     this.version(1).stores({
-      words: "id, topicId",
-      studentWordProgress: "id, studentId, wordId, [studentId+wordId]",
-      topicWaves: "id, studentId, topicId, [studentId+topicId]",
-    });
-    this.version(2).stores({
-      words: "id, topicId",
-      topics: "id",
-      studentWordProgress: "id, studentId, wordId, [studentId+wordId]",
-      topicWaves: "id, studentId, topicId, [studentId+topicId]",
+      words: "id, language",
+      topics: "id, language",
     });
   }
 }
