@@ -16,7 +16,8 @@ function countWord(progress: LearningWord | null): WordCounts {
     return { learned: 0, due: 0, isNew: 1, learnable: 1 };
   }
 
-  const learned = progress.state === WordState.Mature ? 1 : 0;
+  const learned =
+    progress.state === WordState.Mature || progress.state === WordState.Relearning ? 1 : 0;
   const isNew = progress.state === WordState.New ? 1 : 0;
   const learnable =
     progress.state === WordState.New || progress.state === WordState.Learning ? 1 : 0;
