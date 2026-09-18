@@ -18,7 +18,8 @@ const DEFAULT_PRIORITY: ChainStep[] = [
 const LESSON_SIZE = 10;
 
 function getLastAttemptTime(word: LearningWord): number {
-  const last = word.wordProgressEntries.at(-1);
+  const entries = word.wordProgressEntries;
+  const last = entries.length > 0 ? entries[entries.length - 1] : undefined;
   return last ? last.createdAt.getTime() : word.updatedAt.getTime();
 }
 
