@@ -17,6 +17,22 @@ const DEFAULT_PRIORITY: ChainStep[] = [
 
 const LESSON_SIZE = 10;
 
+function getLastAttemptTime(word: LearningWord): number {
+  const last = word.wordProgressEntries.at(-1);
+  return last ? last.createdAt.getTime() : word.updatedAt.getTime();
+}
+
+function compareReviewCandidates(a: LearningWord, b: LearningWord): number {
+  if (a.consecutiveCorrect !== b.consecutiveCorrect) {
+    return a.consecutiveCorrect - b.consecutiveCorrect;
+  }
+  return getLastAttemptTime(a) - getLastAttemptTime(b);
+}
+
+function sortReviewCandidates(words: LearningWord[]): void {
+  words.sort(compareReviewCandidates);
+}
+
 function getQueueByQuata(learningWords: LearningWord[], limit: number): LearningWord[] {
     // todo -dequeue from learningWords
     return learningWords.splice(0, limit);
@@ -37,6 +53,9 @@ export const getLearningWordForLessonByState = (learningWords: LearningWord[]): 
   for (const learningWord of learningWords) {
     byState.get(learningWord.state)!.push(learningWord);
   }
+
+  sortReviewCandidates(byState.get(WordState.Mature)!);
+  sortReviewCandidates(byState.get(WordState.Relearning)!);
 
   const result: LearningWord[] = [];
   let limit = Math.min(learningWords.length, LESSON_SIZE);
